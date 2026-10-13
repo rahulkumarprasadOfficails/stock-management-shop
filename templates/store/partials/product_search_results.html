@@ -1,0 +1,26 @@
+{% load i18n %}
+{% for product in products %}
+<article class="search-product">
+  <div class="min-w-0">
+    <h2 class="truncate font-semibold text-slate-800">{{ product.name }}</h2>
+    <p class="mt-1 text-sm text-slate-600">₹{{ product.selling_price|floatformat:2 }} / {{ product.unit }}</p>
+  </div>
+  <div class="flex shrink-0 items-center gap-3">
+    {% if product.sellable_stock > 0 %}
+      <span class="text-xs text-slate-500">{{ product.sellable_stock }} {{ product.unit }} {% trans "available" %}</span>
+      <button type="button" class="small-button" data-add-product data-id="{{ product.pk }}"
+              data-name="{{ product.name }}" data-unit="{{ product.unit }}"
+              data-price="{{ product.selling_price }}" data-stock="{{ product.sellable_stock }}"
+              data-gst="{{ product.gst_percent }}" aria-label="{% blocktrans with name=product.name %}Add {{ name }} to bill{% endblocktrans %}">{% trans "Add" %}</button>
+    {% else %}
+      <span class="text-xs font-medium text-rose-600">{% trans "Out of stock" %}</span>
+    {% endif %}
+  </div>
+</article>
+{% empty %}
+  {% if search_started %}
+    <p class="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-600">{% trans "No matching product. Check the name or add the product first." %}</p>
+  {% else %}
+    <p class="rounded-lg border border-dashed border-slate-300 bg-white p-4 text-sm text-slate-500">{% trans "Type a product name above to see matching products." %}</p>
+  {% endif %}
+{% endfor %}

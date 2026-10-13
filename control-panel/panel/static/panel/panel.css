@@ -1,0 +1,10 @@
+input:not([type="checkbox"]):not([type="hidden"]),
+textarea,
+select {
+  min-height: 2.75rem;
+}
+
+:focus-visible {
+  outline: 3px solid #818cf8;
+  outline-offset: 2px;
+}

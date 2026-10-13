@@ -1,0 +1,32 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>{% block title %}ShopKeeper Control Panel{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="{% static 'panel/panel.css' %}">
+</head>
+<body class="min-h-screen bg-slate-100 text-slate-900">
+  {% if request.user.is_authenticated %}
+  <header class="bg-slate-950 text-white">
+    <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4">
+      <a class="text-lg font-bold" href="{% url 'dashboard' %}">ShopKeeper Control Panel</a>
+      <nav class="flex flex-wrap items-center gap-2 text-sm">
+        <a class="rounded-lg px-3 py-2 hover:bg-slate-800" href="{% url 'shop_list' %}">Shops</a>
+        <a class="rounded-lg px-3 py-2 hover:bg-slate-800" href="{% url 'announcements' %}">Announcements</a>
+        <a class="rounded-lg px-3 py-2 hover:bg-slate-800" href="{% url 'usage' %}">Usage</a>
+        <a class="rounded-lg px-3 py-2 hover:bg-slate-800" href="{% url 'audit_log' %}">Audit</a>
+        <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="rounded-lg bg-slate-700 px-3 py-2">Sign out</button></form>
+      </nav>
+    </div>
+  </header>
+  {% endif %}
+  <main class="mx-auto max-w-7xl px-4 py-6 sm:py-8">
+    {% for message in messages %}<div class="mb-4 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">{{ message }}</div>{% endfor %}
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

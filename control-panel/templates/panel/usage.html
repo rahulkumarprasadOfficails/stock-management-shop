@@ -1,0 +1,6 @@
+{% extends "panel/base.html" %}
+{% block title %}Usage report · Control Panel{% endblock %}
+{% block content %}
+<div class="mb-5 flex flex-wrap items-end justify-between gap-2"><div><p class="text-sm text-slate-500">Platform activity</p><h1 class="text-2xl font-bold">Usage report</h1></div><a class="rounded-xl bg-slate-900 px-4 py-3 font-semibold text-white" href="{% url 'usage_csv' %}">Export CSV</a></div>
+<section class="overflow-x-auto rounded-2xl bg-white p-4 shadow-sm"><table class="w-full min-w-[38rem] text-left text-sm"><thead><tr class="border-b text-slate-500"><th class="py-3">Shop</th><th>Last login</th><th>Invoices · 30 days</th><th>Products</th></tr></thead><tbody>{% for shop in shops %}<tr class="border-b"><td class="py-3"><a class="font-semibold text-indigo-800" href="{% url 'shop_detail' shop.pk %}">{{ shop.name }}</a></td><td>{{ shop.last_login|date:"d M Y H:i"|default:"Never" }}</td><td>{{ shop.recent_invoice_count }}</td><td>{{ shop.product_count }}</td></tr>{% empty %}<tr><td class="py-3" colspan="4">No shops.</td></tr>{% endfor %}</tbody></table></section>
+{% endblock %}

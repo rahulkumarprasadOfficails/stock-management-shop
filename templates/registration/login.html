@@ -1,0 +1,14 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Log in · ShopSetu" %}{% endblock %}
+{% block content %}
+<div class="mx-auto mt-8 max-w-md rounded-2xl bg-white p-6 shadow-sm sm:mt-16 sm:p-8">
+  <div class="mb-6 text-center"><div class="text-3xl font-bold text-teal-800">{% trans "ShopSetu" %}</div><p class="mt-2 text-slate-600">{% trans "Simple stock and billing for your shop" %}</p></div>
+  <form method="post" class="space-y-4">{% csrf_token %}
+    {% if form.non_field_errors %}<div class="rounded-lg bg-red-50 p-3 text-red-800">{{ form.non_field_errors }}</div>{% endif %}
+    <div><label class="mb-1 block font-medium" for="{{ form.username.id_for_label }}">{% trans "Username" %}</label>{{ form.username }}{{ form.username.errors }}</div>
+    <div><label class="mb-1 block font-medium" for="{{ form.password.id_for_label }}">{% trans "Password" %}</label>{{ form.password }}{{ form.password.errors }}</div>
+    <input type="hidden" name="next" value="{{ next }}">
+    <button class="primary-button w-full">{% trans "Log in" %}</button>
+  </form>
+</div>
+{% endblock %}

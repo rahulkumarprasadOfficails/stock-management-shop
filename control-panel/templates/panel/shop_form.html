@@ -1,0 +1,15 @@
+{% extends "panel/base.html" %}
+{% block title %}{% if shop %}Edit{% else %}Create{% endif %} shop · Control Panel{% endblock %}
+{% block content %}
+<a class="text-sm text-indigo-700" href="{% if shop %}{% url 'shop_detail' shop.pk %}{% else %}{% url 'shop_list' %}{% endif %}">← Back</a>
+<section class="mx-auto mt-3 max-w-2xl rounded-2xl bg-white p-5 shadow-sm sm:p-8">
+  <h1 class="text-2xl font-bold">{% if shop %}Edit shop details{% else %}Create a shop account{% endif %}</h1>
+  {% if not shop %}<p class="mt-2 text-sm text-slate-600">The owner login will be created with a one-time temporary password.</p>{% endif %}
+  <form method="post" class="mt-6 grid gap-4 sm:grid-cols-2">{% csrf_token %}
+    {% for field in form %}<label class="block text-sm font-medium {% if field.name == 'address' %}sm:col-span-2{% endif %}">{{ field.label }}{{ field }}{% if field.help_text %}<span class="mt-1 block text-xs text-slate-500">{{ field.help_text }}</span>{% endif %}{% for error in field.errors %}<span class="block text-xs text-rose-700">{{ error }}</span>{% endfor %}</label>{% endfor %}
+    {% if form.non_field_errors %}<div class="sm:col-span-2 text-rose-700">{{ form.non_field_errors }}</div>{% endif %}
+    <button class="rounded-xl bg-indigo-700 px-4 py-3 font-semibold text-white sm:col-span-2">{% if shop %}Save shop{% else %}Create shop and owner login{% endif %}</button>
+  </form>
+</section>
+<style>input,textarea,select{margin-top:.35rem;width:100%;border:1px solid #cbd5e1;border-radius:.6rem;padding:.7rem}</style>
+{% endblock %}

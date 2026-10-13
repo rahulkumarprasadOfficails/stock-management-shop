@@ -1,0 +1,5 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Set up your shop · ShopSetu" %}{% endblock %}
+{% block content %}<section class="panel mx-auto max-w-2xl"><h1 class="page-title">{% trans "Set up your shop" %}</h1><p class="mb-5 text-slate-600">{% trans "Add these details before you start billing." %}</p><form method="post" class="grid gap-4 sm:grid-cols-2">{% csrf_token %}
+{% for field in form %}<div class="{% if field.name == 'address' %}sm:col-span-2{% endif %}"><label class="mb-1 block font-medium" for="{{ field.id_for_label }}">{% trans field.label %}</label>{{ field }}{{ field.errors }}</div>{% endfor %}
+<button class="primary-button sm:col-span-2">{% trans "Save shop details" %}</button></form></section>{% endblock %}

@@ -1,0 +1,72 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Dashboard · ShopSetu" %}{% endblock %}
+{% block content %}
+<div class="dashboard-heading">
+  <div><span class="eyebrow-label">{% now "l, F j" %}</span><h1 class="page-title">{% trans "Dashboard" %}</h1><p class="text-slate-500">{% trans "Here is what is happening at your shop today." %}</p></div>
+  <a href="{% url 'billing' %}" class="primary-button"><span aria-hidden="true">＋</span>{% trans "New sale" %}</a>
+</div>
+
+<section class="dashboard-metrics" aria-label="{% trans 'Shop overview' %}">
+  <article class="metric-card metric-featured">
+    <div class="metric-topline"><span>{% trans "Today's sales" %}</span><span class="metric-icon" aria-hidden="true">₹</span></div>
+    <strong>₹{{ sales_today|floatformat:2 }}</strong>
+    <small>{% trans "Total from completed bills today" %}</small>
+  </article>
+  <a href="{% url 'stock' %}" class="metric-card">
+    <div class="metric-topline"><span>{% trans "Low stock items" %}</span><span class="metric-icon metric-icon-amber" aria-hidden="true">!</span></div>
+    <strong>{{ low_stock|length }}</strong>
+    <small>{% trans "Products need replenishing" %}</small>
+  </a>
+  <a href="{% url 'credit_list' %}" class="metric-card">
+    <div class="metric-topline"><span>{% trans "Credit pending" %}</span><span class="metric-icon metric-icon-violet" aria-hidden="true">↗</span></div>
+    <strong>₹{{ pending_credit|floatformat:2 }}</strong>
+    <small>{% trans "Outstanding customer balance" %}</small>
+  </a>
+  <article class="metric-card">
+    <div class="metric-topline"><span>{% trans "Expired batches" %}</span><span class="metric-icon metric-icon-red" aria-hidden="true">⌛</span></div>
+    <strong>{{ expired|length }}</strong>
+    <small>{% trans "Need to be written off" %}</small>
+  </article>
+</section>
+
+<section class="expiry-strip">
+  <div><span class="expiry-dot expiry-dot-amber"></span><span>{% trans "Expiring in 7 days" %}</span><strong>{{ expiry_counts.7 }}</strong></div>
+  <div><span class="expiry-dot expiry-dot-blue"></span><span>{% trans "Expiring in 15 days" %}</span><strong>{{ expiry_counts.15 }}</strong></div>
+  <div><span class="expiry-dot expiry-dot-teal"></span><span>{% trans "Expiring in 30 days" %}</span><strong>{{ expiry_counts.30 }}</strong></div>
+</section>
+
+<div class="dashboard-columns">
+  <section class="panel dashboard-panel">
+    <div class="panel-heading"><div><span class="eyebrow-label">{% trans "INVENTORY ALERTS" %}</span><h2 class="section-title">{% trans "Low stock" %}</h2></div><a class="panel-link" href="{% url 'stock' %}">{% trans "View inventory" %}<span aria-hidden="true"> →</span></a></div>
+    {% if low_stock %}
+    <div class="dashboard-table-wrap"><table class="dashboard-table">
+      <thead><tr><th>{% trans "Product" %}</th><th>{% trans "Available" %}</th><th>{% trans "Alert at" %}</th><th>{% trans "Status" %}</th></tr></thead>
+      <tbody>{% for product in low_stock %}
+      <tr><td class="font-semibold text-slate-800">{{ product.name }}</td><td>{{ product.stock|default:0 }} {{ product.unit }}</td><td>{{ product.low_stock_limit }} {{ product.unit }}</td><td><span class="status-pill status-warning">{% trans "Restock" %}</span></td></tr>
+      {% endfor %}</tbody>
+    </table></div>
+    {% else %}<div class="empty-state"><span class="empty-state-mark">✓</span><p>{% trans "All products are above their low-stock limit." %}</p></div>{% endif %}
+  </section>
+
+  <section class="panel dashboard-panel">
+    <div class="panel-heading"><div><span class="eyebrow-label">{% trans "QUICK ACTIONS" %}</span><h2 class="section-title">{% trans "Manage your shop" %}</h2></div></div>
+    <div class="quick-actions">
+      <a href="{% url 'billing' %}"><span class="quick-action-icon quick-action-teal">＋</span><span><strong>{% trans "Create a bill" %}</strong><small>{% trans "Record a customer sale" %}</small></span><span class="quick-arrow">→</span></a>
+      <a href="{% url 'stock_add' %}"><span class="quick-action-icon quick-action-blue">▤</span><span><strong>{% trans "Add a product" %}</strong><small>{% trans "Set up product and opening stock" %}</small></span><span class="quick-arrow">→</span></a>
+      <a href="{% url 'customers' %}"><span class="quick-action-icon quick-action-violet">♙</span><span><strong>{% trans "Customers" %}</strong><small>{% trans "View customers and bill history" %}</small></span><span class="quick-arrow">→</span></a>
+    </div>
+  </section>
+</div>
+
+<section class="panel dashboard-panel mt-5">
+  <div class="panel-heading"><div><span class="eyebrow-label">{% trans "EXPIRY WATCH" %}</span><h2 class="section-title">{% trans "Expired stock" %}</h2></div><a class="panel-link" href="{% url 'stock' %}">{% trans "View inventory" %}<span aria-hidden="true"> →</span></a></div>
+  {% if expired %}
+  <div class="dashboard-table-wrap"><table class="dashboard-table">
+    <thead><tr><th>{% trans "Product" %}</th><th>{% trans "Expiry date" %}</th><th>{% trans "Quantity" %}</th><th>{% trans "Action" %}</th></tr></thead>
+    <tbody>{% for batch in expired %}
+    <tr><td class="font-semibold text-slate-800">{{ batch.product.name }}</td><td>{{ batch.expiry_date }}</td><td>{{ batch.quantity_remaining }} {{ batch.product.unit }}</td><td>{% if user.profile.role == "OWNER" %}<a class="small-button" href="{% url 'stock_correct' batch.pk %}">{% trans "Write off" %}</a>{% else %}<span class="text-slate-400">—</span>{% endif %}</td></tr>
+    {% endfor %}</tbody>
+  </table></div>
+  {% else %}<div class="empty-state"><span class="empty-state-mark">✓</span><p>{% trans "No expired stock." %}</p></div>{% endif %}
+</section>
+{% endblock %}

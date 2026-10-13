@@ -1,0 +1,42 @@
+{% extends "panel/base.html" %}
+{% block title %}{{ shop.name }} · Control Panel{% endblock %}
+{% block content %}
+<div class="mb-5 flex flex-wrap items-start justify-between gap-3"><div><a class="text-sm text-indigo-700" href="{% url 'shop_list' %}">← Shops</a><h1 class="mt-1 text-2xl font-bold">{{ shop.name }}</h1><p class="text-slate-600">{{ shop.owner_name }} · {{ shop.phone }}</p></div><div class="flex flex-wrap gap-2"><a href="{% url 'shop_edit' shop.pk %}" class="rounded-lg bg-white px-4 py-3 font-semibold shadow-sm">Edit details</a><a href="{% url 'support' shop.pk %}" class="rounded-lg bg-slate-900 px-4 py-3 font-semibold text-white">Support view</a></div></div>
+<section class="grid grid-cols-2 gap-3 md:grid-cols-4">
+  <article class="rounded-xl bg-white p-4"><p class="text-sm text-slate-500">Status</p><strong>{% if shop.is_active %}Active{% else %}Inactive{% endif %}</strong></article>
+  <article class="rounded-xl bg-white p-4"><p class="text-sm text-slate-500">Valid until</p><strong>{{ shop.valid_until|date:"d M Y"|default:"No expiry" }}</strong></article>
+  <article class="rounded-xl bg-white p-4"><p class="text-sm text-slate-500">Last login</p><strong>{{ shop.last_login|date:"d M Y H:i"|default:"Never" }}</strong></article>
+  <article class="rounded-xl bg-white p-4"><p class="text-sm text-slate-500">Products / Customers</p><strong>{{ product_count }} / {{ customer_count }}</strong></article>
+  <article class="rounded-xl bg-white p-4"><p class="text-sm text-slate-500">Invoices total / this month</p><strong>{{ invoice_count }} / {{ month_invoice_count }}</strong></article>
+  <article class="rounded-xl bg-white p-4"><p class="text-sm text-slate-500">Sales this month</p><strong>₹{{ month_sales|floatformat:2 }}</strong></article>
+  <article class="rounded-xl bg-white p-4"><p class="text-sm text-slate-500">GSTIN</p><strong>{{ shop.gstin|default:"—" }}</strong></article>
+  <article class="rounded-xl bg-white p-4"><p class="text-sm text-slate-500">Invoice type</p><strong>{{ shop.invoice_type }}</strong></article>
+</section>
+<section class="mt-5 grid gap-4 lg:grid-cols-2">
+  <article class="rounded-2xl bg-white p-4 shadow-sm sm:p-5">
+    <h2 class="mb-3 text-lg font-bold">Shop controls</h2>
+    <div class="flex flex-wrap gap-2">
+      <form method="post" action="{% url 'shop_action' shop.pk %}">{% csrf_token %}<input type="hidden" name="action" value="{% if shop.is_active %}deactivate{% else %}activate{% endif %}"><button class="rounded-lg px-4 py-3 font-semibold {% if shop.is_active %}bg-rose-100 text-rose-800{% else %}bg-emerald-100 text-emerald-800{% endif %}">{% if shop.is_active %}Deactivate shop{% else %}Activate shop{% endif %}</button></form>
+      <form method="post" action="{% url 'shop_action' shop.pk %}" class="flex flex-wrap gap-2">{% csrf_token %}<input type="hidden" name="action" value="extend"><button name="months" value="1" class="rounded-lg bg-indigo-50 px-3 py-3 text-sm font-semibold text-indigo-800">+1 month</button><button name="months" value="3" class="rounded-lg bg-indigo-50 px-3 py-3 text-sm font-semibold text-indigo-800">+3 months</button><button name="months" value="12" class="rounded-lg bg-indigo-50 px-3 py-3 text-sm font-semibold text-indigo-800">+1 year</button></form>
+    </div>
+    <form method="post" action="{% url 'shop_action' shop.pk %}" class="mt-4 flex flex-wrap items-end gap-2">{% csrf_token %}<input type="hidden" name="action" value="set_valid_until"><label class="text-sm">Set valid until {{ valid_until_form.valid_until }}</label><button class="rounded-lg bg-slate-900 px-4 py-3 text-white">Save date</button></form>
+  </article>
+  <article class="rounded-2xl bg-white p-4 shadow-sm sm:p-5">
+    <h2 class="mb-3 text-lg font-bold">Data export</h2><div class="flex flex-wrap gap-2"><a class="rounded-lg bg-slate-900 px-4 py-3 text-white" href="{% url 'shop_export' shop.pk %}">Download JSON</a><a class="rounded-lg bg-slate-100 px-4 py-3" href="{% url 'shop_export' shop.pk %}?format=csv">Download CSV</a></div>
+  </article>
+</section>
+<section class="mt-5 rounded-2xl bg-white p-4 shadow-sm sm:p-5">
+  <div class="mb-3 flex flex-wrap justify-between gap-2"><h2 class="text-lg font-bold">Shopkeeper logins</h2><span class="text-sm text-slate-500">{{ users|length }} users</span></div>
+  <div class="space-y-3">{% for profile in users %}
+    <article class="rounded-xl border border-slate-200 p-3">
+      <div class="flex flex-wrap justify-between gap-2"><div><strong>{{ profile.user.username }}</strong><span class="ml-2 rounded-full bg-slate-100 px-2 py-1 text-xs">{{ profile.role }}</span><p class="mt-1 text-sm text-slate-500">{{ profile.user.email|default:"No email" }} · Last login {{ profile.user.last_login|date:"d M Y H:i"|default:"Never" }}</p><p class="text-xs">{% if profile.user.is_active %}Login active{% else %}Login deactivated{% endif %}{% if profile.must_change_password %} · Must change password{% endif %}</p></div>
+      <div class="flex flex-wrap gap-2">
+        <form method="post" action="{% url 'user_password_reset' shop.pk profile.user_id %}">{% csrf_token %}<button class="rounded-lg bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-800">Reset password</button></form>
+        <form method="post" action="{% url 'user_unlock' shop.pk profile.user_id %}">{% csrf_token %}<button class="rounded-lg bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900">Unlock</button></form>
+        <form method="post" action="{% url 'user_deactivate' shop.pk profile.user_id %}">{% csrf_token %}<button class="rounded-lg bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-800">{% if profile.user.is_active %}Deactivate login{% else %}Activate login{% endif %}</button></form>
+      </div></div>
+    </article>
+  {% empty %}<p class="text-slate-500">No users linked to this shop.</p>{% endfor %}</div>
+</section>
+<style>input[type=date]{display:block;margin-top:.3rem;border:1px solid #cbd5e1;border-radius:.5rem;padding:.65rem}</style>
+{% endblock %}

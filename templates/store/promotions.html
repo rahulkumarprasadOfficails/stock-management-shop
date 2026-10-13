@@ -1,0 +1,30 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Promotions · ShopSetu" %}{% endblock %}
+{% block content %}
+<h1 class="page-title mb-4">{% trans "WhatsApp promotions" %}</h1>
+<section class="panel mb-5">
+  <h2 class="section-title mb-3">{% trans "Message and optional attachment" %}</h2>
+  <p class="mb-3 text-sm text-slate-600">{% trans "Use {name} to add the customer's name. WhatsApp opens with your message; you confirm sending there." %}</p>
+  <form method="post" class="space-y-3">{% csrf_token %}{{ form.message }}{{ form.message.errors }}<button class="primary-button">{% trans "Save message" %}</button></form>
+  <div class="mt-5 border-t pt-4">
+    <label for="promotion-attachment" class="mb-1 block text-sm font-semibold">{% trans "Attach an image or PDF (optional)" %}</label>
+    <input id="promotion-attachment" type="file" accept="image/*,application/pdf" class="block w-full rounded-lg border border-slate-300 bg-white p-2 text-sm">
+    <p class="mt-1 text-xs text-slate-500">{% trans "After Send opens this customer's WhatsApp chat, attach the selected file there. WhatsApp requires you to confirm sending." %}</p>
+  </div>
+</section>
+<p id="promotion-share-status" class="mb-3 text-sm" role="status" aria-live="polite"></p>
+<span id="promotion-share-messages" class="hidden" data-title="{% trans 'Shop promotion' %}" data-shared="{% trans 'Shared with {name}.' %}" data-invalid="{% trans 'Choose an image or PDF file.' %}" data-unsupported="{% trans 'File sharing is not supported here. WhatsApp will open with the message; attach the file in WhatsApp.' %}" data-cancelled="{% trans 'Sharing was cancelled. No promotion was recorded.' %}" data-failed="{% trans 'The share could not be completed. Please try again.' %}" data-log-failed="{% trans 'The share opened, but the promotion log could not be saved.' %}"></span>
+<section class="space-y-3">
+  <h2 class="section-title">{% trans "Customers who allow promotions" %}</h2>
+  <p class="text-sm text-slate-500">{% trans "Send whenever you need; there is no sending cooldown." %}</p>
+  {% for customer in customers %}
+  <article class="panel flex flex-wrap items-center justify-between gap-3">
+    <div><strong>{{ customer.name }}</strong><p class="text-sm text-slate-600">+91 {{ customer.whatsapp_number }}</p></div>
+    <form method="post" action="{% url 'promotion_send' customer.pk %}" data-promotion-form data-customer="{{ customer.name }}">
+      {% csrf_token %}<input type="hidden" name="message" value="{{ promotion_message }}">
+      <button class="small-button" type="submit">{% trans "Send" %}</button>
+    </form>
+  </article>
+  {% empty %}<p class="text-slate-500">{% trans "No customers have opted in to promotions yet." %}</p>{% endfor %}
+</section>
+{% endblock %}

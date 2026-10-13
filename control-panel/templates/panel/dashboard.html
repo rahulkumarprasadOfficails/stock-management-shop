@@ -1,0 +1,20 @@
+{% extends "panel/base.html" %}
+{% block title %}Dashboard · ShopKeeper Control Panel{% endblock %}
+{% block content %}
+<div class="mb-6 flex flex-wrap items-end justify-between gap-3">
+  <div><p class="text-sm text-slate-500">Platform overview</p><h1 class="text-2xl font-bold sm:text-3xl">Dashboard</h1></div>
+  <a href="{% url 'shop_create' %}" class="rounded-xl bg-indigo-700 px-4 py-3 font-semibold text-white">+ Create shop</a>
+</div>
+<section class="grid grid-cols-2 gap-3 lg:grid-cols-3">
+  <article class="rounded-2xl bg-white p-4 shadow-sm"><p class="text-sm text-slate-500">Total shops</p><p class="mt-2 text-3xl font-bold">{{ shop_count }}</p></article>
+  <article class="rounded-2xl bg-white p-4 shadow-sm"><p class="text-sm text-slate-500">Active shops</p><p class="mt-2 text-3xl font-bold">{{ active_count }}</p></article>
+  <article class="rounded-2xl bg-white p-4 shadow-sm"><p class="text-sm text-slate-500">Expired shops</p><p class="mt-2 text-3xl font-bold">{{ expired_count }}</p></article>
+  <article class="rounded-2xl bg-white p-4 shadow-sm"><p class="text-sm text-slate-500">Inactive for 7+ days</p><p class="mt-2 text-3xl font-bold">{{ inactive_week_count }}</p></article>
+  <article class="rounded-2xl bg-white p-4 shadow-sm"><p class="text-sm text-slate-500">Invoices this month</p><p class="mt-2 text-3xl font-bold">{{ invoice_count }}</p></article>
+  <article class="rounded-2xl bg-white p-4 shadow-sm"><p class="text-sm text-slate-500">New shops this month</p><p class="mt-2 text-3xl font-bold">{{ new_shop_count }}</p></article>
+</section>
+<section class="mt-8 rounded-2xl bg-white p-4 shadow-sm sm:p-6">
+  <div class="mb-3 flex justify-between"><h2 class="text-lg font-bold">Recently added shops</h2><a class="text-indigo-700" href="{% url 'shop_list' %}">All shops →</a></div>
+  <div class="divide-y">{% for shop in recent_shops %}<a class="flex justify-between gap-3 py-3" href="{% url 'shop_detail' shop.pk %}"><span><strong>{{ shop.name }}</strong><span class="block text-sm text-slate-500">{{ shop.owner_name }}</span></span><span class="text-sm">{{ shop.created_at|date:"d M Y" }}</span></a>{% empty %}<p class="py-4 text-slate-500">No shops yet.</p>{% endfor %}</div>
+</section>
+{% endblock %}

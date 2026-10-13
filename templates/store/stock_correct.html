@@ -1,0 +1,3 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Correct stock · ShopSetu" %}{% endblock %}
+{% block content %}<section class="panel mx-auto max-w-lg"><h1 class="page-title">{% trans "Correct stock" %}</h1><p class="my-3">{{ batch.product.name }} · {{ batch.quantity_remaining }} {{ batch.product.unit }} {% trans "available" %}</p><form method="post" class="space-y-4">{% csrf_token %}{% for field in form %}<div><label class="mb-1 block font-medium" for="{{ field.id_for_label }}">{% trans field.label %}</label>{{ field }}{{ field.errors }}</div>{% endfor %}<button class="primary-button">{% trans "Record correction" %}</button></form></section>{% endblock %}

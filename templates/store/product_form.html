@@ -1,0 +1,5 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{{ title }} · ShopSetu{% endblock %}
+{% block content %}<section class="panel mx-auto max-w-2xl"><h1 class="page-title">{% trans title %}</h1><form method="post" class="mt-5 grid gap-4 sm:grid-cols-2">{% csrf_token %}
+{% for field in form %}<div><label class="mb-1 block font-medium" for="{{ field.id_for_label }}">{% trans field.label %}</label>{{ field }}{{ field.errors }}</div>{% endfor %}
+<button class="primary-button sm:col-span-2">{% trans "Save product" %}</button></form></section>{% endblock %}

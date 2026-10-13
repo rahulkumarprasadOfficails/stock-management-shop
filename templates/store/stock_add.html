@@ -1,0 +1,20 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Add stock · ShopSetu" %}{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-2xl space-y-5">
+  <header><h1 class="page-title">{% trans "Add stock" %}</h1><p class="mt-1 text-slate-600">{% trans "Create a product and add its opening stock together." %}</p></header>
+  <section class="panel">
+    <h2 class="mb-1 text-lg font-semibold">{% trans "Create product and add opening stock" %}</h2>
+    <p class="mb-4 text-sm text-slate-600">{% trans "Enter the product details and its current quantity in one step." %}</p>
+    <form method="post" class="grid gap-4 sm:grid-cols-2">{% csrf_token %}
+      <input type="hidden" name="action" value="create_product">
+      {% for field in form %}
+      <div class="{% if field.name == 'name' or field.name == 'note' %}sm:col-span-2{% endif %}">
+        <label class="mb-1 block font-medium" for="{{ field.id_for_label }}">{% trans field.label %}</label>{{ field }}{{ field.errors }}
+      </div>
+      {% endfor %}
+      <button class="primary-button sm:col-span-2">{% trans "Create product and save stock" %}</button>
+    </form>
+  </section>
+</div>
+{% endblock %}

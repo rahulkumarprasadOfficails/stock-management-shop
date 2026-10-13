@@ -1,0 +1,27 @@
+@media print {
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+
+  @page receipt {
+    size: 80mm auto;
+    margin: 3mm;
+  }
+
+  body.receipt-print .invoice-paper {
+    page: receipt;
+    width: 74mm;
+    max-width: 74mm;
+    font-size: 8pt;
+  }
+
+  body.receipt-print .invoice-paper table {
+    font-size: 7pt;
+  }
+
+  body.receipt-print .invoice-paper th,
+  body.receipt-print .invoice-paper td {
+    padding: 0.2rem 0.1rem;
+  }
+}

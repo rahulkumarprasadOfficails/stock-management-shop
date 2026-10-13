@@ -1,0 +1,15 @@
+{% extends "panel/base.html" %}
+{% block title %}Sign in · ShopKeeper Control Panel{% endblock %}
+{% block content %}
+<div class="mx-auto mt-10 max-w-md rounded-2xl bg-white p-6 shadow-sm sm:mt-20 sm:p-8">
+  <p class="text-sm font-semibold uppercase tracking-wide text-indigo-700">Private platform access</p>
+  <h1 class="mt-2 text-2xl font-bold">ShopKeeper Control Panel</h1>
+  <p class="mt-2 text-sm text-slate-600">Sign in with the platform administrator account.</p>
+  <form method="post" class="mt-6 space-y-4">{% csrf_token %}
+    {% if form.non_field_errors %}<div class="rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{{ form.non_field_errors }}</div>{% endif %}
+    {% for field in form %}<label class="block text-sm font-medium">{{ field.label }}{{ field }}{% if field.errors %}<span class="text-rose-700">{{ field.errors }}</span>{% endif %}</label>{% endfor %}
+    <button class="w-full rounded-xl bg-indigo-700 px-4 py-3 font-semibold text-white">Sign in</button>
+  </form>
+</div>
+<style>input{margin-top:.35rem;width:100%;border:1px solid #cbd5e1;border-radius:.6rem;padding:.7rem}</style>
+{% endblock %}

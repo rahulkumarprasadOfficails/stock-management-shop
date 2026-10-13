@@ -1,0 +1,79 @@
+{% extends "base.html" %}{% load i18n static %}
+{% block head %}<link rel="stylesheet" href="{% static 'store/billing.css' %}?v=2">{% endblock %}
+{% block title %}{% trans "Billing · ShopSetu" %}{% endblock %}
+{% block content %}
+<div class="mb-5">
+  <h1 class="page-title">{% trans "Create bill" %}</h1>
+  <p class="mt-1 text-sm text-slate-600">{% trans "Search for a product and add it to the bill." %}</p>
+</div>
+<form method="post" id="billing-form" class="billing-layout">{% csrf_token %}
+  <section class="min-w-0 billing-products">
+    <label class="mb-2 block text-sm font-semibold" for="product-search">{% trans "Search products" %}</label>
+    <div class="relative">
+      <input id="product-search" name="q" class="billing-search" type="search"
+             placeholder="{% trans 'Type a product name…' %}"
+             hx-get="{% url 'product_search' %}" hx-trigger="input changed delay:250ms"
+             hx-target="#product-results" hx-indicator="#search-indicator"
+             autocomplete="off" aria-label="{% trans 'Search products by name' %}">
+      <span id="search-indicator" class="htmx-indicator absolute right-4 top-1/2 -translate-y-1/2 text-sm text-slate-500">{% trans "Searching…" %}</span>
+    </div>
+    <div id="product-results" class="mt-2" aria-live="polite">
+      {% include "store/partials/product_search_results.html" with products=empty_products search_started=False %}
+    </div>
+    <span id="search-error-message" class="hidden">{% trans "Could not load products. Please try again." %}</span>
+  </section>
+
+  <section class="rounded-xl border border-slate-200 bg-white billing-summary">
+    <div class="border-b border-slate-200 px-4 py-3">
+      <h2 class="font-semibold">{% trans "Bill summary" %} <span class="ml-1 text-sm font-normal text-slate-500">(<span id="cart-count">0</span> {% trans "items" %})</span></h2>
+    </div>
+    <div class="p-4">
+      <div id="bill-lines" class="cart-lines divide-y">
+        <p id="empty-cart" class="py-3 text-sm text-slate-500">{% trans "No products added yet." %}</p>
+      </div>
+      <div class="mt-3 flex justify-between border-t border-slate-200 pt-3 font-semibold">
+        <span>{% trans "Estimated total" %}</span><span>₹<span id="estimated-total">0.00</span></span>
+      </div>
+      <span id="estimated-total-copy" class="hidden">0.00</span>
+
+      <div class="mt-4 space-y-3">
+        <div>
+          <label class="mb-1 block text-sm font-medium" for="{{ form.customer.id_for_label }}">{% trans "Customer (optional)" %}</label>
+          {{ form.customer }}{{ form.customer.errors }}
+        </div>
+        <details class="rounded-lg border border-slate-200 p-3" {% if form.new_customer_name.errors or form.new_customer_whatsapp_number.errors or form.new_customer_address.errors or form.non_field_errors %}open{% endif %}>
+          <summary class="cursor-pointer font-medium text-teal-900">{% trans "Add a new customer to this bill" %}</summary>
+          <p class="mt-2 text-xs text-slate-600">{% trans "Enter their name and 10-digit WhatsApp number. The customer will be saved with this bill." %}</p>
+          <div class="mt-3 space-y-3">
+            <div>
+              <label class="mb-1 block text-sm font-medium" for="{{ form.new_customer_name.id_for_label }}">{% trans "Name" %}</label>
+              {{ form.new_customer_name }}{{ form.new_customer_name.errors }}
+            </div>
+            <div>
+              <label class="mb-1 block text-sm font-medium" for="{{ form.new_customer_whatsapp_number.id_for_label }}">{% trans "WhatsApp number" %}</label>
+              {{ form.new_customer_whatsapp_number }}{{ form.new_customer_whatsapp_number.errors }}
+            </div>
+            <div>
+              <label class="mb-1 block text-sm font-medium" for="{{ form.new_customer_address.id_for_label }}">{% trans "Address (optional)" %}</label>
+              {{ form.new_customer_address }}{{ form.new_customer_address.errors }}
+            </div>
+          </div>
+        </details>
+        <div>
+          <label class="mb-1 block text-sm font-medium" for="{{ form.payment_type.id_for_label }}">{% trans "Payment method" %}</label>
+          {{ form.payment_type }}{{ form.payment_type.errors }}
+        </div>
+        <div>
+          <label class="mb-1 block text-sm font-medium" for="{{ form.amount_paid.id_for_label }}">{% trans "Paid now" %}</label>
+          {{ form.amount_paid }}{{ form.amount_paid.errors }}
+          <p class="mt-1 text-xs text-slate-500">{% trans "For credit sales, enter how much was paid today." %}</p>
+        </div>
+      </div>
+      {{ form.items_json }}
+      <span id="empty-bill-message" class="hidden">{% trans "Add at least one product to the bill." %}</span>
+      {% if form.non_field_errors %}<div class="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-800">{{ form.non_field_errors }}</div>{% endif %}
+      <button class="primary-button mt-4 w-full">{% trans "Complete bill" %}</button>
+    </div>
+  </section>
+</form>
+{% endblock %}

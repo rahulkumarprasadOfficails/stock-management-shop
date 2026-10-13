@@ -1,0 +1,91 @@
+{% load i18n static %}
+<!doctype html>
+<html lang="{{ LANGUAGE_CODE }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f5f7fb">
+  <link rel="manifest" href="{% url 'manifest' %}">
+  <link rel="icon" href="{% static 'store/icon.svg' %}" type="image/svg+xml">
+  <title>{% block title %}{% trans "ShopSetu" %}{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+  <link rel="stylesheet" href="{% static 'store/app.css' %}?v=2">
+  {% block head %}{% endblock %}
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-900">
+{% if user.is_authenticated and not user.is_superuser %}
+<div class="app-shell">
+  <aside class="app-sidebar">
+    <a href="{% url 'home' %}" class="brand-lockup">
+      <span class="brand-mark" aria-hidden="true">S</span>
+      <span><strong>ShopSetu</strong><small>{% trans "Stock & Sales" %}</small></span>
+    </a>
+    <div class="sidebar-caption">{% trans "WORKSPACE" %}</div>
+    <nav class="sidebar-nav" aria-label="{% trans 'Main navigation' %}">
+      <a class="sidebar-link {% if request.resolver_match.url_name == 'home' %}is-active{% endif %}" href="{% url 'home' %}"><span class="nav-symbol">⌂</span>{% trans "Dashboard" %}</a>
+      <a class="sidebar-link {% if request.resolver_match.url_name == 'stock' or request.resolver_match.url_name == 'stock_add' or request.resolver_match.url_name == 'stock_correct' %}is-active{% endif %}" href="{% url 'stock' %}"><span class="nav-symbol">▤</span>{% trans "Inventory" %}</a>
+      <a class="sidebar-link {% if request.resolver_match.url_name == 'billing' %}is-active{% endif %}" href="{% url 'billing' %}"><span class="nav-symbol">▣</span>{% trans "Sales & Billing" %}</a>
+      <a class="sidebar-link {% if request.resolver_match.url_name == 'customers' or request.resolver_match.url_name == 'customer_detail' or request.resolver_match.url_name == 'customer_create' or request.resolver_match.url_name == 'customer_edit' %}is-active{% endif %}" href="{% url 'customers' %}"><span class="nav-symbol">♙</span>{% trans "Customers" %}</a>
+      <a class="sidebar-link {% if request.resolver_match.url_name == 'credit_list' or request.resolver_match.url_name == 'credit_add' %}is-active{% endif %}" href="{% url 'credit_list' %}"><span class="nav-symbol">₹</span>{% trans "Credit ledger" %}</a>
+    </nav>
+    {% if user.profile.role == "OWNER" %}
+    <div class="sidebar-caption sidebar-caption-spaced">{% trans "MANAGE" %}</div>
+    <nav class="sidebar-nav" aria-label="{% trans 'Shop management' %}">
+      <a class="sidebar-link {% if request.resolver_match.url_name == 'reports' or request.resolver_match.url_name == 'report_csv' %}is-active{% endif %}" href="{% url 'reports' %}"><span class="nav-symbol">⌁</span>{% trans "Reports" %}</a>
+      <a class="sidebar-link {% if request.resolver_match.url_name == 'promotions' or request.resolver_match.url_name == 'promotion_send' %}is-active{% endif %}" href="{% url 'promotions' %}"><span class="nav-symbol">✳</span>{% trans "Promotions" %}</a>
+      <a class="sidebar-link {% if request.resolver_match.url_name == 'staff' or request.resolver_match.url_name == 'staff_create' or request.resolver_match.url_name == 'staff_toggle' %}is-active{% endif %}" href="{% url 'staff' %}"><span class="nav-symbol">⚙</span>{% trans "Staff accounts" %}</a>
+    </nav>
+    {% endif %}
+    <div class="sidebar-shop-card">
+      <span class="shop-avatar" aria-hidden="true">{{ user.profile.shop.name|first|upper }}</span>
+      <span class="min-w-0"><strong>{{ user.profile.shop.name }}</strong><small>{{ user.get_full_name|default:user.username }}</small></span>
+    </div>
+  </aside>
+  <div class="app-main">
+    <header class="app-topbar">
+      <div class="topbar-title"><span class="topbar-eyebrow">{% trans "SHOP WORKSPACE" %}</span><strong>{{ user.profile.shop.name }}</strong></div>
+      <div class="topbar-actions">
+        <span class="topbar-user">{{ user.get_full_name|default:user.username }}</span>
+        <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="logout-button">{% trans "Log out" %}</button></form>
+      </div>
+    </header>
+{% endif %}
+
+<main class="{% if user.is_authenticated and not user.is_superuser %}app-content{% else %}public-content{% endif %}">
+  {% if user.is_authenticated and not user.is_superuser %}
+    {% for announcement in active_announcements %}
+      <div class="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-amber-950"><strong>{{ announcement.title }}</strong> — {{ announcement.message }}</div>
+    {% endfor %}
+  {% endif %}
+  {% for message in messages %}
+    <div class="mb-4 rounded-xl p-3 {% if message.tags == 'error' %}bg-red-100 text-red-900{% else %}bg-emerald-100 text-emerald-900{% endif %}">{{ message }}</div>
+  {% endfor %}
+  {% block content %}{% endblock %}
+</main>
+
+{% if user.is_authenticated and not user.is_superuser %}
+  </div>
+  <nav class="mobile-dock" aria-label="{% trans 'Quick navigation' %}">
+    <a class="{% if request.resolver_match.url_name == 'home' %}is-active{% endif %}" href="{% url 'home' %}"><span>⌂</span>{% trans "Home" %}</a>
+    <a class="{% if request.resolver_match.url_name == 'stock' or request.resolver_match.url_name == 'stock_add' or request.resolver_match.url_name == 'stock_correct' %}is-active{% endif %}" href="{% url 'stock' %}"><span>▤</span>{% trans "Stock" %}</a>
+    <a class="{% if request.resolver_match.url_name == 'billing' %}is-active{% endif %}" href="{% url 'billing' %}"><span>▣</span>{% trans "Billing" %}</a>
+    <a class="{% if request.resolver_match.url_name == 'customers' or request.resolver_match.url_name == 'customer_detail' %}is-active{% endif %}" href="{% url 'customers' %}"><span>♙</span>{% trans "Customers" %}</a>
+    <details class="mobile-more">
+      <summary><span>•••</span>{% trans "More" %}</summary>
+      <div class="mobile-more-menu">
+        <a href="{% url 'credit_list' %}">{% trans "Credit ledger" %}</a>
+        {% if user.profile.role == "OWNER" %}
+        <a href="{% url 'reports' %}">{% trans "Reports" %}</a>
+        <a href="{% url 'promotions' %}">{% trans "Promotions" %}</a>
+        <a href="{% url 'staff' %}">{% trans "Staff accounts" %}</a>
+        {% endif %}
+        <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button>{% trans "Log out" %}</button></form>
+      </div>
+    </details>
+  </nav>
+</div>
+{% endif %}
+<script src="{% static 'store/app.js' %}"></script>
+</body>
+</html>

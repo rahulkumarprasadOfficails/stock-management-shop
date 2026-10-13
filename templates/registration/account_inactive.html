@@ -1,0 +1,3 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Account inactive · ShopSetu" %}{% endblock %}
+{% block content %}<section class="panel mx-auto mt-12 max-w-lg text-center"><h1 class="page-title">{% trans "Account inactive" %}</h1><p class="mb-5 text-slate-600">{% trans "Your shop account is inactive or its access period has ended. Please contact the ShopSetu administrator." %}</p><a class="primary-button inline-block" href="{% url 'login' %}">{% trans "Return to login" %}</a></section>{% endblock %}

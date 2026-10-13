@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: skcp-owner-portal-7f29c1
+    runtime: python
+    buildCommand: bash build.sh
+    startCommand: gunicorn controlpanel.wsgi:application
+    healthCheckPath: /health/
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        sync: false

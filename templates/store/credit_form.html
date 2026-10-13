@@ -1,0 +1,3 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Ledger entry · ShopSetu" %}{% endblock %}
+{% block content %}<section class="panel mx-auto max-w-xl"><h1 class="page-title">{% trans "Ledger entry for" %} {{ customer.name }}</h1><p class="mt-2 text-slate-600">{% trans "Current pending credit" %}: <strong>₹{{ balance|floatformat:2 }}</strong></p><form method="post" class="mt-5 space-y-4">{% csrf_token %}{% for field in form %}<div><label class="mb-1 block font-medium" for="{{ field.id_for_label }}">{% trans field.label %}</label>{{ field }}{{ field.errors }}</div>{% endfor %}<button class="primary-button">{% trans "Save ledger entry" %}</button></form></section>{% endblock %}

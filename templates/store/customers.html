@@ -1,0 +1,4 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Customers · ShopSetu" %}{% endblock %}
+{% block content %}<div class="mb-4 flex flex-wrap items-center justify-between gap-3"><h1 class="page-title">{% trans "Customers" %}</h1><a class="primary-button" href="{% url 'customer_create' %}">{% trans "Add customer" %}</a></div><form method="get" class="mb-4 flex gap-2"><input class="form-input min-w-0 flex-1" name="q" value="{{ query }}" placeholder="{% trans 'Search name or phone' %}"><button class="small-button">{% trans "Search" %}</button></form>
+<div class="grid gap-3 sm:grid-cols-2">{% for customer in customers %}<a href="{% url 'customer_detail' customer.pk %}" class="panel hover:border-teal-500"><h2 class="font-bold">{{ customer.name }}</h2><p class="text-slate-600">+91 {{ customer.whatsapp_number }}</p></a>{% empty %}<p class="text-slate-500">{% trans "No customers found." %}</p>{% endfor %}</div>{% endblock %}
