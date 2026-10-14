@@ -12,7 +12,13 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 if not SECRET_KEY and os.environ.get("RENDER", "").lower() == "true":
     raise ImproperlyConfigured("Set SECRET_KEY in the Render environment.")
 SECRET_KEY = SECRET_KEY or "shopsetu-local-development-key-not-for-deployment-2026-only"
-ALLOWED_HOSTS = [host.strip() for host in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if host.strip()]
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+    if host.strip()
+]
+if "stock-management-shop-shopsetu.onrender.com" not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append("stock-management-shop-shopsetu.onrender.com")
 CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",") if origin.strip()]
 
 INSTALLED_APPS = [
