@@ -1,0 +1,36 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "About ShopSetu" %} · ShopSetu{% endblock %}
+{% block content %}
+<div class="mb-5">
+  <h1 class="page-title">{% trans "About ShopSetu" %}</h1>
+  <p class="mt-1 text-slate-600">{% trans "A practical digital workspace for everyday retail operations." %}</p>
+</div>
+<div class="grid gap-4 lg:grid-cols-2">
+  <article class="panel">
+    <h2 class="section-title mb-3">ShopSetu के बारे में</h2>
+    <p class="leading-7 text-slate-700">ShopSetu छोटे किराना और रिटेल दुकानों के रोज़मर्रा के काम को आसान बनाने के लिए बनाया गया है। एक ही जगह पर उत्पाद और स्टॉक संभालें, बिक्री का बिल बनाएं और ग्राहक का बकाया देखें।</p>
+    <h3 class="mt-5 font-semibold">मुख्य सुविधाएँ</h3>
+    <ul class="mt-2 list-inside list-disc space-y-2 text-slate-700">
+      <li>उत्पाद सूची, स्टॉक बैच और एक्सपायरी की जानकारी।</li>
+      <li>बिक्री और टैक्स बिल, PDF डाउनलोड और प्रिंट।</li>
+      <li>ग्राहक रिकॉर्ड, उधार और भुगतान का हिसाब।</li>
+      <li>कम स्टॉक और मालिक के लिए बिक्री रिपोर्ट।</li>
+      <li>WhatsApp पर बिल साझा करने के विकल्प।</li>
+    </ul>
+    <p class="mt-5 rounded-lg bg-teal-50 p-3 text-sm text-teal-950">यह ऐप दुकान के दैनिक रिकॉर्ड और कामकाज में मदद करता है। बिक्री और टैक्स से जुड़े नियमों की पुष्टि अपनी ज़रूरत के अनुसार करें।</p>
+  </article>
+  <article class="panel">
+    <h2 class="section-title mb-3">About ShopSetu</h2>
+    <p class="leading-7 text-slate-700">ShopSetu is a digital workspace designed to simplify day-to-day operations for small grocery and retail shops. Manage products and stock, create sales invoices, and keep track of customer balances in one place.</p>
+    <h3 class="mt-5 font-semibold">What you can do</h3>
+    <ul class="mt-2 list-inside list-disc space-y-2 text-slate-700">
+      <li>Manage product catalogues, stock batches, and expiry dates.</li>
+      <li>Create sales and tax invoices, then download PDFs or print them.</li>
+      <li>Maintain customer records and track credit and payments.</li>
+      <li>Review low-stock information and owner sales reports.</li>
+      <li>Share invoices through WhatsApp using the available sharing options.</li>
+    </ul>
+    <p class="mt-5 rounded-lg bg-teal-50 p-3 text-sm text-teal-950">ShopSetu supports everyday shop records and workflows. Please verify applicable sales and tax requirements for your business.</p>
+  </article>
+</div>
+{% endblock %}

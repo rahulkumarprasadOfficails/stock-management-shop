@@ -266,14 +266,37 @@ def user_unlock(request, shop_pk, user_pk):
 @staff_required
 @require_POST
 def user_deactivate(request, shop_pk, user_pk):
-    profile = get_object_or_404(UserProfile.objects.select_related("user"), shop_id=shop_pk, user_id=user_pk)
+    profile = get_object_or_404(
+        UserProfile.objects.select_related("user", "shop"),
+        shop_id=shop_pk, user_id=user_pk,
+    )
     with transaction.atomic():
         profile.user.is_active = not profile.user.is_active
         profile.user.save(update_fields=["is_active"])
         action = "user.activated" if profile.user.is_active else "user.deactivated"
         log_action(request.user, action, object_type="User", object_id=profile.user_id,
                    details={"username": profile.user.username, "shop_id": shop_pk})
-    messages.success(request, f"{profile.user.username} is now {'active' if profile.user.is_active else 'inactive'}.")
+        if not profile.user.is_active and profile.shop.is_active:
+            profile.shop.is_active = False
+            profile.shop.save(update_fields=["is_active"])
+            log_action(
+                request.user, "shop.deactivated", object_type="Shop", object_id=profile.shop_id,
+                details={
+                    "name": profile.shop.name,
+                    "reason": "shopkeeper_login_deactivated",
+                    "username": profile.user.username,
+                },
+            )
+    if profile.user.is_active:
+        messages.success(
+            request,
+            f"{profile.user.username} is active. The shop remains inactive until you reactivate it separately.",
+        )
+    else:
+        messages.success(
+            request,
+            f"{profile.user.username} is inactive and {profile.shop.name} has been marked inactive.",
+        )
     return redirect("shop_detail", pk=shop_pk)
 
 

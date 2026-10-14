@@ -1,0 +1,36 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Developer & Support" %} · ShopSetu{% endblock %}
+{% block content %}
+<div class="mb-5">
+  <h1 class="page-title">{% trans "Developer & Support" %}</h1>
+  <p class="mt-1 text-slate-600">{% trans "Meet the people behind ShopSetu and contact the team for assistance." %}</p>
+</div>
+<div class="grid gap-4 lg:grid-cols-2">
+  <article class="panel">
+    <h2 class="section-title mb-3">डेवलपर के बारे में</h2>
+    <p class="leading-7 text-slate-700">राहुल कुमार प्रसाद एक बहुराष्ट्रीय कंपनी में Cloud Developer के रूप में काम करते हैं। उन्हें क्लाउड तकनीक और उपयोगी डिजिटल उत्पाद बनाने में रुचि है। वे अलग-अलग तरह के ऐप और वेबसाइट बनाते हैं, जिनका उद्देश्य रोज़मर्रा की समस्याओं के लिए व्यावहारिक और भरोसेमंद समाधान देना है। ShopSetu इसी सोच के साथ बनाया गया है।</p>
+    <p class="mt-4 text-slate-700"><strong>डेवलपर:</strong> राहुल कुमार प्रसाद</p>
+    <p class="mt-2 text-slate-700"><strong>संपर्क:</strong> <a class="text-teal-800 underline" href="tel:+916203027876">+91 62030 27876</a></p>
+  </article>
+  <article class="panel">
+    <h2 class="section-title mb-3">About the developer</h2>
+    <p class="leading-7 text-slate-700">Rahul Kumar Prasad works as a Cloud Developer at a multinational company. He is interested in cloud technologies and building useful digital products. He develops a range of applications and websites, focusing on practical, reliable solutions to everyday problems. ShopSetu was created with that same goal in mind.</p>
+    <p class="mt-4 text-slate-700"><strong>Developer:</strong> Rahul Kumar Prasad</p>
+    <p class="mt-2 text-slate-700"><strong>Contact:</strong> <a class="text-teal-800 underline" href="tel:+916203027876">+91 62030 27876</a></p>
+  </article>
+</div>
+<section class="panel mt-4">
+  <h2 class="section-title mb-3">तकनीकी सहायता / Technical support</h2>
+  <p class="mb-4 text-slate-600">तकनीकी सहायता के लिए हमारी टीम से संपर्क करें। / Contact our team for technical support.</p>
+  <div class="grid gap-3 sm:grid-cols-2">
+    <article class="rounded-lg border border-slate-200 p-4">
+      <h3 class="font-semibold">राणा शेखर / Rana Shekhar</h3>
+      <a class="mt-2 inline-block text-teal-800 underline" href="tel:+919508083649">+91 95080 83649</a>
+    </article>
+    <article class="rounded-lg border border-slate-200 p-4">
+      <h3 class="font-semibold">अभिषेक वर्मा / Abhishek Verma</h3>
+      <a class="mt-2 inline-block text-teal-800 underline" href="tel:+917061058012">+91 70610 58012</a>
+    </article>
+  </div>
+</section>
+{% endblock %}

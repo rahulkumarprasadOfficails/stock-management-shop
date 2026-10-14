@@ -111,6 +111,16 @@ def account_inactive(request):
     return render(request, "registration/account_inactive.html")
 
 
+@login_required
+def about(request):
+    return render(request, "store/about.html")
+
+
+@login_required
+def developer(request):
+    return render(request, "store/developer.html")
+
+
 @owner_only
 def setup(request):
     shop = current_shop(request)

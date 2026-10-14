@@ -85,6 +85,34 @@ class ControlPanelTests(TestCase):
         self.assertFalse(shop.is_active)
         self.assertTrue(AuditLog.objects.filter(action="shop.deactivated", object_id=str(shop.pk)).exists())
 
+    def test_deactivating_login_marks_shop_inactive_and_reactivation_is_separate(self):
+        shop = self.create_shop()
+        profile = UserProfile.objects.select_related("user").get(shop=shop)
+        action_url = reverse("user_deactivate", args=[shop.pk, profile.user_id])
+
+        response = self.client.post(action_url)
+        self.assertRedirects(response, reverse("shop_detail", args=[shop.pk]))
+        profile.refresh_from_db()
+        profile.user.refresh_from_db()
+        shop.refresh_from_db()
+        self.assertFalse(profile.user.is_active)
+        self.assertFalse(shop.is_active)
+        self.assertTrue(AuditLog.objects.filter(
+            action="shop.deactivated", object_id=str(shop.pk),
+            details__reason="shopkeeper_login_deactivated",
+        ).exists())
+
+        self.client.post(action_url)
+        profile.refresh_from_db()
+        profile.user.refresh_from_db()
+        shop.refresh_from_db()
+        self.assertTrue(profile.user.is_active)
+        self.assertFalse(shop.is_active)
+
+        self.client.post(reverse("shop_action", args=[shop.pk]), {"action": "activate"})
+        shop.refresh_from_db()
+        self.assertTrue(shop.is_active)
+
     def test_permanent_shop_deletion_requires_exact_name_and_removes_shop_logins(self):
         shop = self.create_shop()
         profile = UserProfile.objects.select_related("user").get(shop=shop)

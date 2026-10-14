@@ -1,14 +1,73 @@
 {% extends "base.html" %}{% load i18n %}
 {% block title %}{% trans "Log in · ShopSetu" %}{% endblock %}
+{% block head %}
+<style>
+  @keyframes login-shop-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+
+  @keyframes login-shop-window-glow {
+    0%, 100% { fill: #ccfbf1; }
+    50% { fill: #99f6e4; }
+  }
+
+  .login-shop-illustration {
+    animation: login-shop-float 3.5s ease-in-out infinite;
+  }
+
+  .login-shop-window {
+    animation: login-shop-window-glow 3s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .login-shop-illustration,
+    .login-shop-window {
+      animation: none;
+    }
+  }
+</style>
+{% endblock %}
 {% block content %}
-<div class="mx-auto mt-8 max-w-md rounded-2xl bg-white p-6 shadow-sm sm:mt-16 sm:p-8">
-  <div class="mb-6 text-center"><div class="text-3xl font-bold text-teal-800">{% trans "ShopSetu" %}</div><p class="mt-2 text-slate-600">{% trans "Simple stock and billing for your shop" %}</p></div>
-  <form method="post" class="space-y-4">{% csrf_token %}
-    {% if form.non_field_errors %}<div class="rounded-lg bg-red-50 p-3 text-red-800">{{ form.non_field_errors }}</div>{% endif %}
-    <div><label class="mb-1 block font-medium" for="{{ form.username.id_for_label }}">{% trans "Username" %}</label>{{ form.username }}{{ form.username.errors }}</div>
-    <div><label class="mb-1 block font-medium" for="{{ form.password.id_for_label }}">{% trans "Password" %}</label>{{ form.password }}{{ form.password.errors }}</div>
-    <input type="hidden" name="next" value="{{ next }}">
-    <button class="primary-button w-full">{% trans "Log in" %}</button>
-  </form>
+<div class="mx-auto mt-4 grid max-w-5xl items-center gap-4 sm:mt-16 sm:gap-6 lg:grid-cols-2 lg:gap-12">
+  <section class="order-2 px-2 py-2 text-teal-950 sm:px-4 lg:order-1">
+    <svg class="login-shop-illustration mx-auto mb-5 block w-full max-w-xs" viewBox="0 0 320 205" role="img" aria-labelledby="login-shop-title">
+      <title id="login-shop-title">ShopSetu grocery shop illustration</title>
+      <ellipse cx="160" cy="188" rx="112" ry="10" fill="#ccfbf1"/>
+      <g stroke="#0f766e" stroke-linecap="round" stroke-linejoin="round" stroke-width="4">
+        <path d="M73 84h174v100H73z" fill="#fff"/>
+        <path d="M62 83 78 42h164l16 41z" fill="#0f766e"/>
+        <path d="M62 83h196v23H62z" fill="#14b8a6"/>
+        <path d="M62 83h32v23H62zm64 0h32v23h-32zm64 0h32v23h-32z" fill="#f0fdfa" stroke="none"/>
+        <path d="M62 106h196" fill="none"/>
+        <path d="M92 126h48v43H92z" class="login-shop-window" fill="#ccfbf1"/>
+        <path d="M102 147h28M116 126v43" fill="none"/>
+        <path d="M165 121h48v63h-48z" fill="#fef3c7"/>
+        <path d="M159 121h60v-16h-60z" fill="#f59e0b"/>
+        <path d="M177 143h24v41h-24z" fill="#fff"/>
+        <path d="M196 162h1" fill="none"/>
+        <path d="M106 69h108" fill="none" stroke="#fff" stroke-width="5"/>
+        <path d="m273 55 4 9 10 1-7 7 2 10-9-5-9 5 2-10-7-7 10-1z" fill="#fbbf24" stroke="none"/>
+      </g>
+    </svg>
+    <p class="text-sm font-semibold uppercase tracking-wide text-teal-800">ShopSetu</p>
+    <h1 class="mt-2 text-2xl font-bold sm:text-3xl">आपकी दुकान के लिए आसान डिजिटल हिसाब</h1>
+    <p class="mt-3 leading-7 text-slate-700">ShopSetu किराना और छोटी रिटेल दुकानों को स्टॉक संभालने, बिक्री के बिल बनाने, एक्सपायरी देखने और ग्राहक के उधार का हिसाब रखने में मदद करता है।</p>
+    <h2 class="mt-6 text-xl font-bold">A simpler way to manage your shop</h2>
+    <p class="mt-3 leading-7 text-slate-700">ShopSetu helps grocery and small retail shops manage stock, create sales bills, track expiry dates, and keep customer credit records in one place.</p>
+  </section>
+  <section class="order-1 rounded-2xl bg-white p-6 shadow-sm sm:p-8 lg:order-2">
+    <div class="mb-6 text-center">
+      <div class="text-3xl font-bold text-teal-800">{% trans "ShopSetu" %}</div>
+      <p class="mt-2 text-slate-600">{% trans "Simple stock and billing for your shop" %}</p>
+    </div>
+    <form method="post" class="space-y-4">{% csrf_token %}
+      {% if form.non_field_errors %}<div class="rounded-lg bg-red-50 p-3 text-red-800">{{ form.non_field_errors }}</div>{% endif %}
+      <div><label class="mb-1 block font-medium" for="{{ form.username.id_for_label }}">{% trans "Username" %}</label>{{ form.username }}{{ form.username.errors }}</div>
+      <div><label class="mb-1 block font-medium" for="{{ form.password.id_for_label }}">{% trans "Password" %}</label>{{ form.password }}{{ form.password.errors }}</div>
+      <input type="hidden" name="next" value="{{ next }}">
+      <button class="primary-button w-full">{% trans "Log in" %}</button>
+    </form>
+  </section>
 </div>
 {% endblock %}

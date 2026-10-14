@@ -36,6 +36,17 @@ class ShopTestCase(TestCase):
 
 
 class TenantIsolationTests(ShopTestCase):
+    def test_login_page_explains_shopsetu_purpose_in_hindi_and_english(self):
+        response = self.client.get(reverse("login"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "आपकी दुकान के लिए आसान डिजिटल हिसाब")
+        self.assertContains(response, "स्टॉक संभालने")
+        self.assertContains(response, "A simpler way to manage your shop")
+        self.assertContains(response, "manage stock")
+        self.assertContains(response, "login-shop-illustration")
+        self.assertContains(response, "prefers-reduced-motion")
+
     def test_dashboard_aggregates_expiry_and_credit_instead_of_per_customer_queries(self):
         second_customer = Customer.objects.create(
             shop=self.shop, name="Second Customer", whatsapp_number="9876543212",
@@ -512,6 +523,30 @@ class BillingServiceTests(ShopTestCase):
         self.assertContains(response, "Tax Invoice")
         self.assertContains(response, "Ten Rupees only")
 
+    def test_about_and_developer_pages_require_login_and_show_bilingual_content(self):
+        for route in ("about", "developer"):
+            with self.subTest(route=route):
+                response = self.client.get(reverse(route))
+                self.assertRedirects(
+                    response,
+                    f"{reverse('login')}?next={reverse(route)}",
+                )
+
+        self.client.force_login(self.user)
+        about_response = self.client.get(reverse("about"))
+        self.assertEqual(about_response.status_code, 200)
+        self.assertContains(about_response, "About ShopSetu")
+        self.assertContains(about_response, "ShopSetu के बारे में")
+        self.assertContains(about_response, "expiry dates")
+
+        developer_response = self.client.get(reverse("developer"))
+        self.assertEqual(developer_response.status_code, 200)
+        self.assertContains(developer_response, "Rahul Kumar Prasad")
+        self.assertContains(developer_response, "राहुल कुमार प्रसाद")
+        self.assertContains(developer_response, "tel:+916203027876")
+        self.assertContains(developer_response, "tel:+919508083649")
+        self.assertContains(developer_response, "tel:+917061058012")
+
     def test_invoice_pdf_download_works_for_shop_and_public_share_link(self):
         invoice = create_invoice(
             user=self.user, shop=self.shop, customer=self.customer,
@@ -567,6 +602,7 @@ class InventoryQueryTests(ShopTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "dashboard-metrics")
         self.assertContains(response, "mobile-dock")
+        self.assertContains(response, "Developed &amp; engineered by Rahul Kumar Prasad")
         self.assertContains(response, "Low stock")
         self.assertEqual(len(response.context["low_stock"]), 1)
         self.assertEqual(response.context["expiry_counts"][7], 1)

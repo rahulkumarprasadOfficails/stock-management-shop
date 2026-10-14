@@ -28,6 +28,8 @@
       <a class="sidebar-link {% if request.resolver_match.url_name == 'billing' %}is-active{% endif %}" href="{% url 'billing' %}"><span class="nav-symbol">▣</span>{% trans "Sales & Billing" %}</a>
       <a class="sidebar-link {% if request.resolver_match.url_name == 'customers' or request.resolver_match.url_name == 'customer_detail' or request.resolver_match.url_name == 'customer_create' or request.resolver_match.url_name == 'customer_edit' %}is-active{% endif %}" href="{% url 'customers' %}"><span class="nav-symbol">♙</span>{% trans "Customers" %}</a>
       <a class="sidebar-link {% if request.resolver_match.url_name == 'credit_list' or request.resolver_match.url_name == 'credit_add' %}is-active{% endif %}" href="{% url 'credit_list' %}"><span class="nav-symbol">₹</span>{% trans "Credit ledger" %}</a>
+      <a class="sidebar-link {% if request.resolver_match.url_name == 'about' %}is-active{% endif %}" href="{% url 'about' %}"><span class="nav-symbol">ⓘ</span>{% trans "About ShopSetu" %}</a>
+      <a class="sidebar-link {% if request.resolver_match.url_name == 'developer' %}is-active{% endif %}" href="{% url 'developer' %}"><span class="nav-symbol">✦</span>{% trans "Developer & Support" %}</a>
     </nav>
     {% if user.profile.role == "OWNER" %}
     <div class="sidebar-caption sidebar-caption-spaced">{% trans "MANAGE" %}</div>
@@ -64,6 +66,12 @@
   {% block content %}{% endblock %}
 </main>
 
+<footer class="border-t border-slate-200 px-4 py-4 text-center text-xs text-slate-500 sm:px-6">
+  <span class="font-semibold tracking-wide text-slate-700">KR&trade;</span>
+  <span aria-hidden="true"> · </span>
+  <span>Developed &amp; engineered by Rahul Kumar Prasad</span>
+</footer>
+
 {% if user.is_authenticated and not user.is_superuser %}
   </div>
   <nav class="mobile-dock" aria-label="{% trans 'Quick navigation' %}">
@@ -75,6 +83,8 @@
       <summary><span>•••</span>{% trans "More" %}</summary>
       <div class="mobile-more-menu">
         <a href="{% url 'credit_list' %}">{% trans "Credit ledger" %}</a>
+        <a href="{% url 'about' %}">{% trans "About ShopSetu" %}</a>
+        <a href="{% url 'developer' %}">{% trans "Developer & Support" %}</a>
         {% if user.profile.role == "OWNER" %}
         <a href="{% url 'reports' %}">{% trans "Reports" %}</a>
         <a href="{% url 'promotions' %}">{% trans "Promotions" %}</a>
