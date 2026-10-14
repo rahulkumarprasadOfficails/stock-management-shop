@@ -2,7 +2,7 @@ services:
   - type: web
     name: shopsetu
     runtime: python
-    buildCommand: "./build.sh"
+    buildCommand: "bash build.sh"
     startCommand: "gunicorn shopsetu.wsgi:application"
     healthCheckPath: /health/
     envVars:

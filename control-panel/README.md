@@ -38,7 +38,7 @@ Set these environment variables on this Control Panel service:
 - `ALLOWED_HOSTS`: the exact Control Panel Render hostname.
 - `ALLOWED_IPS` (optional): comma-separated client IPs, after confirming the proxy's remote-address behavior.
 
-The build creates the panel-only schema, runs only the Control Panel's migrations, and collects static files. The Neon database role must have permission to create a schema and tables. If it cannot create the schema, grant permissions or use a role that can; do not point the panel's migrations into `public`.
+The build installs the Control Panel's Python dependencies, creates the panel-only schema, runs only the Control Panel's migrations, and collects static files. The Neon database role must have permission to create a schema and tables. If it cannot create the schema, grant permissions or use a role that can; do not point the panel's migrations into `public`.
 
 ### 4. Create the Control Panel superuser
 

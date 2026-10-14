@@ -35,7 +35,7 @@ The public app has no sign-up page. Platform-created accounts log in at `/login/
 
 1. Create a GitHub repository, add this project, and push the default branch.
 2. Create a free PostgreSQL project/database in [Neon](https://neon.tech/). Copy the pooled connection string; it should use PostgreSQL and SSL (Neon supplies the appropriate URL).
-3. In Render, choose **New + → Blueprint**, connect the GitHub repository, and deploy the included `render.yaml`. The blueprint runs `build.sh` to migrate the schema and collect static files before starting Gunicorn.
+3. In Render, choose **New + → Blueprint**, connect the GitHub repository, and deploy the included `render.yaml`. The blueprint runs `build.sh` to install the app's Python dependencies, migrate the schema, and collect static files before starting Gunicorn.
 4. In the Render service environment, set:
    - `DATABASE_URL`: Neon connection string.
    - `SECRET_KEY`: a newly generated, private random value (Render can generate one).
