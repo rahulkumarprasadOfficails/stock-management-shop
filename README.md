@@ -40,7 +40,7 @@ The public app has no sign-up page. Platform-created accounts log in at `/login/
    - `DATABASE_URL`: Neon connection string.
    - `SECRET_KEY`: a newly generated, private random value (Render can generate one).
    - `DEBUG`: `False`.
-   - `ALLOWED_HOSTS`: your exact Render hostname, for example `shopsetu.onrender.com`.
+   - `ALLOWED_HOSTS`: Render's assigned hostname is allowed automatically; add any custom domains as a comma-separated list.
    - `CSRF_TRUSTED_ORIGINS`: `https://shopsetu.onrender.com`.
 5. Wait for the deploy to finish. Use the Render shell or a one-off command to run `python manage.py createsuperuser`.
 6. Open `https://<your-render-host>/platform-admin/`, create each Shop, owner User, and associated UserProfile. Admin users can also create read-only-in-app Announcements there.
