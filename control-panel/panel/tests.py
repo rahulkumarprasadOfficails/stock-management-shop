@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
@@ -82,6 +84,81 @@ class ControlPanelTests(TestCase):
         shop.refresh_from_db()
         self.assertFalse(shop.is_active)
         self.assertTrue(AuditLog.objects.filter(action="shop.deactivated", object_id=str(shop.pk)).exists())
+
+    def test_permanent_shop_deletion_requires_exact_name_and_removes_shop_logins(self):
+        shop = self.create_shop()
+        profile = UserProfile.objects.select_related("user").get(shop=shop)
+        user_id = profile.user_id
+        product = Product.objects.create(
+            shop=shop, name="Test item", unit="pcs", selling_price=Decimal("10.00"),
+        )
+        batch = StockBatch.objects.create(
+            shop=shop, product=product, quantity_received=Decimal("5"),
+            quantity_remaining=Decimal("5"), received_on=timezone.localdate(),
+        )
+        StockAdjustment.objects.create(
+            shop=shop, batch=batch, quantity_change=Decimal("-1"), reason="DAMAGED",
+            created_by_id=user_id, created_at=timezone.now(),
+        )
+        customer = Customer.objects.create(
+            shop=shop, name="Test customer", whatsapp_number="9876543210",
+        )
+        invoice = Invoice.objects.create(
+            shop=shop, number="SMP-1", share_token="test-shop-delete-token",
+            customer=customer, date=timezone.now(), created_by_id=user_id,
+        )
+        invoice_item = InvoiceItem.objects.create(
+            shop=shop, invoice=invoice, product=product, quantity=Decimal("1"),
+            unit_price=Decimal("10.00"), tax_amount=Decimal("0.00"),
+            line_total=Decimal("10.00"),
+        )
+        InvoiceItemBatch.objects.create(
+            shop=shop, invoice_item=invoice_item, batch=batch, quantity=Decimal("1"),
+        )
+        CreditEntry.objects.create(
+            shop=shop, customer=customer, invoice=invoice, entry_type="GIVEN",
+            amount=Decimal("10.00"), date=timezone.localdate(),
+        )
+        PromotionLog.objects.create(
+            shop=shop, customer=customer, message="Test message", sent_on=timezone.now(),
+        )
+        announcement = Announcement.objects.create(
+            title="Test announcement", message="Test message", created_at=timezone.now(),
+        )
+        AnnouncementTarget.objects.create(announcement=announcement, shop=shop)
+
+        response = self.client.post(reverse("shop_action", args=[shop.pk]), {
+            "action": "delete", "confirm_shop_name": "wrong name",
+        })
+        self.assertRedirects(response, reverse("shop_detail", args=[shop.pk]))
+        self.assertTrue(Shop.objects.filter(pk=shop.pk).exists())
+        self.assertTrue(ShopkeeperUser.objects.filter(pk=user_id).exists())
+
+        deactivate_response = self.client.post(reverse("shop_action", args=[shop.pk]), {
+            "action": "deactivate",
+        })
+        self.assertRedirects(deactivate_response, reverse("shop_detail", args=[shop.pk]))
+        shop.refresh_from_db()
+        self.assertFalse(shop.is_active)
+
+        delete_response = self.client.post(reverse("shop_action", args=[shop.pk]), {
+            "action": "delete", "confirm_shop_name": shop.name,
+        })
+        self.assertRedirects(delete_response, reverse("shop_list"))
+        self.assertFalse(Shop.objects.filter(pk=shop.pk).exists())
+        self.assertFalse(UserProfile.objects.filter(shop_id=shop.pk).exists())
+        self.assertFalse(ShopkeeperUser.objects.filter(pk=user_id).exists())
+        for model in (
+            Product, StockBatch, StockAdjustment, Customer, Invoice,
+            InvoiceItem, InvoiceItemBatch, CreditEntry, PromotionLog,
+            AnnouncementTarget,
+        ):
+            with self.subTest(model=model.__name__):
+                self.assertFalse(model.objects.filter(shop_id=shop.pk).exists())
+        self.assertTrue(AuditLog.objects.filter(
+            action="shop.deleted", object_id=str(shop.pk),
+            details__name="Sample Shop",
+        ).exists())
 
     def test_password_reset_requires_change_and_audits_without_storing_password(self):
         shop = self.create_shop()

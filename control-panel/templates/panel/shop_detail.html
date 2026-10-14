@@ -25,6 +25,19 @@
     <h2 class="mb-3 text-lg font-bold">Data export</h2><div class="flex flex-wrap gap-2"><a class="rounded-lg bg-slate-900 px-4 py-3 text-white" href="{% url 'shop_export' shop.pk %}">Download JSON</a><a class="rounded-lg bg-slate-100 px-4 py-3" href="{% url 'shop_export' shop.pk %}?format=csv">Download CSV</a></div>
   </article>
 </section>
+<section class="mt-5 rounded-2xl border border-rose-300 bg-rose-50 p-4 shadow-sm sm:p-5">
+  <h2 class="text-lg font-bold text-rose-900">Permanently delete shop</h2>
+  <p class="mt-2 text-sm text-rose-900">This cannot be undone. It permanently removes this shop's products, stock, invoices, customers, credit and promotion records, announcement targeting, and shopkeeper logins. The control-panel deletion audit record is retained.</p>
+  <form method="post" action="{% url 'shop_action' shop.pk %}" class="mt-4 flex flex-wrap items-end gap-3">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="delete">
+    <label class="min-w-64 flex-1 text-sm font-semibold text-rose-900">
+      Type <span class="font-bold">{{ shop.name }}</span> to confirm
+      <input name="confirm_shop_name" required autocomplete="off" class="mt-1 block w-full rounded-lg border border-rose-300 bg-white px-3 py-2 text-slate-900">
+    </label>
+    <button class="rounded-lg bg-rose-700 px-4 py-3 font-semibold text-white">Permanently delete shop</button>
+  </form>
+</section>
 <section class="mt-5 rounded-2xl bg-white p-4 shadow-sm sm:p-5">
   <div class="mb-3 flex flex-wrap justify-between gap-2"><h2 class="text-lg font-bold">Shopkeeper logins</h2><span class="text-sm text-slate-500">{{ users|length }} users</span></div>
   <div class="space-y-3">{% for profile in users %}

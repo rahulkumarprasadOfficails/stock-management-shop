@@ -528,6 +528,22 @@ class BillingServiceTests(ShopTestCase):
             self.assertEqual(response["Content-Type"], "application/pdf")
             self.assertIn(b"%PDF-", response.content[:10])
 
+    def test_invoice_detail_offers_pdf_file_sharing_and_whatsapp_link_fallback(self):
+        invoice = create_invoice(
+            user=self.user, shop=self.shop, customer=self.customer,
+            payment_type=Invoice.PaymentType.CASH, amount_paid=0,
+            items_json='[{"product_id": %s, "quantity": "1"}]' % self.product.pk,
+        )
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("invoice_detail", args=[invoice.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "data-invoice-share")
+        self.assertContains(response, reverse("invoice_pdf", args=[invoice.pk]))
+        self.assertContains(response, reverse("invoice_whatsapp", args=[invoice.pk]))
+        self.assertContains(response, "Open WhatsApp with invoice link")
+
     def test_product_search_returns_matching_in_stock_shop_products(self):
         self.client.force_login(self.user)
         response = self.client.get(

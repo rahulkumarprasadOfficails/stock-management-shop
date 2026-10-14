@@ -68,6 +68,42 @@
   }
 }
 
+@media (max-width: 640px) {
+  .billing-products > label,
+  .billing-summary label,
+  .billing-summary h2,
+  .billing-summary details summary {
+    font-size: 1rem;
+  }
+
+  .billing-search,
+  .billing-summary .form-input {
+    min-height: 3rem;
+    font-size: 1rem;
+  }
+
+  .search-product {
+    padding: 1rem;
+  }
+
+  .search-product > div:first-child p,
+  .search-product > div:last-child span {
+    font-size: 1rem;
+  }
+
+  .search-product .small-button,
+  .billing-summary > div > button {
+    min-height: 3rem;
+    font-size: 1rem;
+  }
+
+  .billing-summary .text-xs,
+  .billing-summary .text-sm {
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+}
+
 @media (min-width: 1200px) {
   .billing-layout {
     grid-template-columns: minmax(0, 3fr) minmax(320px, 2fr);

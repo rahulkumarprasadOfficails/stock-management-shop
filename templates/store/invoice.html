@@ -2,7 +2,37 @@
 {% block head %}<link rel="stylesheet" href="{% static 'store/print.css' %}">{% endblock %}
 {% block title %}{% trans "Invoice" %} {{ invoice.number }} · ShopSetu{% endblock %}
 {% block content %}
-<div class="mb-4 flex flex-wrap items-center justify-between gap-2 no-print"><a href="{% url 'billing' %}" class="small-button">← {% trans "New bill" %}</a><div class="flex flex-wrap gap-2"><a href="{% if public %}{% url 'public_invoice_pdf' invoice.share_token %}{% else %}{% url 'invoice_pdf' invoice.pk %}{% endif %}" class="primary-button">{% trans "Download PDF" %}</a><button type="button" onclick="window.print()" class="small-button">{% trans "Print A4" %}</button><button type="button" onclick="document.body.classList.add('receipt-print');window.onafterprint=()=>document.body.classList.remove('receipt-print');window.print()" class="small-button">{% trans "Print 80mm receipt" %}</button>{% if not public %}{% if invoice.customer %}<a class="small-button" href="{% url 'invoice_whatsapp' invoice.pk %}">{% trans "Send on WhatsApp" %}</a>{% endif %}{% if user.profile.role == "OWNER" and invoice.status == "ACTIVE" %}<form method="post" action="{% url 'invoice_cancel' invoice.pk %}">{% csrf_token %}<button class="danger-button" onclick="return confirm('{% trans "Cancel this invoice and restore stock?" %}')">{% trans "Cancel invoice" %}</button></form>{% endif %}{% endif %}</div></div>
+<div class="mb-4 flex flex-wrap items-center justify-between gap-2 no-print">
+  <a href="{% url 'billing' %}" class="small-button">← {% trans "New bill" %}</a>
+  <div class="flex flex-wrap gap-2">
+    <a href="{% if public %}{% url 'public_invoice_pdf' invoice.share_token %}{% else %}{% url 'invoice_pdf' invoice.pk %}{% endif %}" class="primary-button">{% trans "Download PDF" %}</a>
+    <button type="button" onclick="window.print()" class="small-button">{% trans "Print A4" %}</button>
+    <button type="button" onclick="document.body.classList.add('receipt-print');window.onafterprint=()=>document.body.classList.remove('receipt-print');window.print()" class="small-button">{% trans "Print 80mm receipt" %}</button>
+    {% if not public and invoice.customer %}
+    <button
+      type="button"
+      class="small-button"
+      data-invoice-share
+      data-pdf-url="{% url 'invoice_pdf' invoice.pk %}"
+      data-invoice-number="{{ invoice.number }}"
+      data-share-title="{% trans 'Invoice' %} {{ invoice.number }}"
+      data-share-text="{% blocktrans with customer=invoice.customer.name number=invoice.number shop=invoice.shop.name %}Hello {{ customer }}, here is invoice {{ number }} from {{ shop }}.{% endblocktrans %}"
+      data-preparing="{% trans 'Preparing invoice PDF...' %}"
+      data-ready="{% trans 'Share PDF' %}"
+      data-unsupported="{% trans 'PDF sharing is not supported in this browser. Download the PDF and attach it in WhatsApp.' %}"
+      data-failed="{% trans 'Could not prepare the PDF. Download it and attach it in WhatsApp.' %}"
+      data-cancelled="{% trans 'Sharing cancelled.' %}"
+      data-shared="{% trans 'Share sheet opened. Choose WhatsApp and send the invoice.' %}"
+      hidden
+    >{% trans "Share PDF" %}</button>
+    <a class="small-button" href="{% url 'invoice_whatsapp' invoice.pk %}">{% trans "Open WhatsApp with invoice link" %}</a>
+    {% endif %}
+    {% if not public and user.profile.role == "OWNER" and invoice.status == "ACTIVE" %}
+    <form method="post" action="{% url 'invoice_cancel' invoice.pk %}">{% csrf_token %}<button class="danger-button" onclick="return confirm('{% trans "Cancel this invoice and restore stock?" %}')">{% trans "Cancel invoice" %}</button></form>
+    {% endif %}
+  </div>
+</div>
+{% if not public and invoice.customer %}<p id="invoice-share-status" class="mb-3 text-sm" role="status" aria-live="polite"></p>{% endif %}
 <article class="invoice-paper">
 <header class="mb-5 border-b pb-4 text-center"><h1 class="text-2xl font-bold">{{ invoice.shop.name }}</h1><p>{{ invoice.shop.address|linebreaksbr }}</p><p>{% trans "Phone" %}: {{ invoice.shop.phone }}{% if invoice.shop.gstin %} · GSTIN: {{ invoice.shop.gstin }}{% endif %}</p><h2 class="mt-4 text-xl font-bold">{% if invoice.shop.invoice_type == "BILL_OF_SUPPLY" %}{% trans "Bill of Supply" %}{% else %}{% trans "Tax Invoice" %}{% endif %}</h2></header>
 <div class="mb-4 grid grid-cols-2 gap-2 text-sm"><p><strong>{% trans "Invoice" %}:</strong> {{ invoice.number }}</p><p><strong>{% trans "Date" %}:</strong> {{ invoice.date|date:"d M Y, h:i A" }}</p><p><strong>{% trans "Customer" %}:</strong> {% if invoice.customer %}{{ invoice.customer.name }}{% else %}{% trans "Walk-in customer" %}{% endif %}</p><p><strong>{% trans "Payment" %}:</strong> {% trans invoice.get_payment_type_display %}</p></div>

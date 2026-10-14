@@ -57,7 +57,7 @@ Every shop-owned model includes a `shop` foreign key and a custom queryset suppo
 - Password-change gate, inactive/expired-shop gate, and django-axes login throttling.
 - Product catalog, manual stock batches, expiry visibility, and mandatory-reason quantity corrections.
 - Atomic invoice creation with row-locked batches, FEFO allocation, expired-batch skipping, and stock restoration on cancellation.
-- Shareable print invoice (browser print CSS and downloadable PDF), GST split display, public invoice token URL, and wa.me links.
+- Shareable print invoice (browser print CSS and downloadable PDF), GST split display, public invoice token URL, and WhatsApp sharing. On supported phones, share the invoice PDF through the device share sheet, choose WhatsApp and the recipient, then confirm sending; browsers without file sharing can open WhatsApp with the public invoice link and attach the PDF manually.
 - Customer records, credit statement and reminders, and repeatable opted-in WhatsApp promotions. The promotion Send button opens the selected customer's WhatsApp chat with prefilled text; attach any selected image/PDF in that chat and confirm sending manually. WhatsApp does not allow this free web app to send messages or media directly.
 - Platform announcements support optional schedules and shop targeting, managed by the separate private Control Panel.
 - Owner reports and CSV exports, PWA manifest/icons, and `/health/` endpoint.

@@ -2,7 +2,7 @@ import secrets
 import string
 
 from django.contrib.auth.hashers import make_password
-from django.db import transaction
+from django.db import connection, transaction
 from django.utils import timezone
 
 from .models import AuditLog, Shop, ShopkeeperUser, UserProfile
@@ -47,3 +47,51 @@ def log_action(actor, action, *, object_type="", object_id="", details=None):
         actor=actor, action=action, object_type=object_type,
         object_id=str(object_id), details=details or {},
     )
+
+
+@transaction.atomic
+def delete_shop_permanently(*, shop_id, confirmed_name, actor):
+    shop = Shop.objects.select_for_update().filter(pk=shop_id).first()
+    if shop is None or shop.name != confirmed_name:
+        return None
+
+    user_ids = list(UserProfile.objects.filter(shop_id=shop_id).values_list("user_id", flat=True))
+    usernames = list(ShopkeeperUser.objects.filter(pk__in=user_ids).values_list("username", flat=True))
+    record_counts = {}
+    with connection.cursor() as cursor:
+        for table in (
+            "store_announcementtarget",
+            "store_invoiceitembatch",
+            "store_invoiceitem",
+            "store_creditentry",
+            "store_stockadjustment",
+            "store_promotionlog",
+            "store_invoice",
+            "store_stockbatch",
+            "store_product",
+            "store_customer",
+            "store_userprofile",
+        ):
+            cursor.execute(f"DELETE FROM {table} WHERE shop_id = %s", [shop_id])
+            record_counts[table] = cursor.rowcount
+
+        if connection.vendor == "postgresql":
+            cursor.execute("SELECT to_regclass(%s)", ["public.axes_accessattempt"])
+            if cursor.fetchone()[0]:
+                for username in usernames:
+                    cursor.execute(
+                        "DELETE FROM public.axes_accessattempt WHERE username = %s",
+                        [username],
+                    )
+
+        for user_id in user_ids:
+            cursor.execute("DELETE FROM auth_user WHERE id = %s", [user_id])
+        record_counts["auth_user"] = len(user_ids)
+        cursor.execute("DELETE FROM store_shop WHERE id = %s", [shop_id])
+        record_counts["store_shop"] = cursor.rowcount
+
+    log_action(
+        actor, "shop.deleted", object_type="Shop", object_id=shop_id,
+        details={"name": shop.name, "deleted_records": record_counts},
+    )
+    return record_counts

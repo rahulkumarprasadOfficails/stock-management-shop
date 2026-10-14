@@ -26,7 +26,9 @@ from .models import (
     Announcement, AnnouncementTarget, AuditLog, Customer, Invoice, Product,
     Shop, ShopkeeperUser, StockBatch, UserProfile,
 )
-from .services import create_shop_with_owner, log_action, temporary_password
+from .services import (
+    create_shop_with_owner, delete_shop_permanently, log_action, temporary_password,
+)
 
 
 def staff_required(view_func):
@@ -159,6 +161,22 @@ def shop_action(request, pk):
             shop.save(update_fields=["is_active"])
             log_action(request.user, f"shop.{action}d", object_type="Shop", object_id=shop.pk, details={"name": shop.name})
         messages.success(request, f"{shop.name} is now {'active' if shop.is_active else 'inactive'}.")
+    elif action == "delete":
+        confirmed_name = request.POST.get("confirm_shop_name", "").strip()
+        if confirmed_name != shop.name:
+            messages.error(request, "Type the exact shop name to confirm permanent deletion.")
+            return redirect("shop_detail", pk=shop.pk)
+        deleted_records = delete_shop_permanently(
+            shop_id=shop.pk, confirmed_name=confirmed_name, actor=request.user,
+        )
+        if deleted_records is None:
+            messages.error(request, "The shop changed or was already deleted. Refresh the shop list.")
+            return redirect("shop_list")
+        messages.success(
+            request,
+            f"{shop.name} and its business data and shop logins were permanently deleted.",
+        )
+        return redirect("shop_list")
     elif action == "extend":
         months = request.POST.get("months")
         if months not in {"1", "3", "12"}:

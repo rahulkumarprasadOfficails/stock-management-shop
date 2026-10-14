@@ -2,6 +2,61 @@
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js"));
   }
+  const invoiceShareButton = document.querySelector("[data-invoice-share]");
+  if (invoiceShareButton) {
+    const shareStatus = document.getElementById("invoice-share-status");
+    if (
+      typeof navigator.share !== "function"
+      || typeof navigator.canShare !== "function"
+      || typeof File === "undefined"
+    ) {
+      shareStatus.textContent = invoiceShareButton.dataset.unsupported;
+    } else {
+      invoiceShareButton.hidden = false;
+      invoiceShareButton.disabled = true;
+      invoiceShareButton.textContent = invoiceShareButton.dataset.preparing;
+      fetch(invoiceShareButton.dataset.pdfUrl, { credentials: "same-origin" })
+        .then(response => {
+          const contentType = response.headers.get("content-type") || "";
+          if (!response.ok || !contentType.toLowerCase().includes("application/pdf")) {
+            throw new Error("Invoice PDF could not be loaded.");
+          }
+          return response.blob();
+        })
+        .then(blob => {
+          const safeNumber = invoiceShareButton.dataset.invoiceNumber.replace(/[^A-Za-z0-9_-]+/g, "-");
+          const file = new File([blob], `${safeNumber || "invoice"}.pdf`, { type: "application/pdf" });
+          if (!navigator.canShare({ files: [file] })) {
+            invoiceShareButton.hidden = true;
+            shareStatus.textContent = invoiceShareButton.dataset.unsupported;
+            return;
+          }
+          invoiceShareButton.disabled = false;
+          invoiceShareButton.textContent = invoiceShareButton.dataset.ready;
+          invoiceShareButton.addEventListener("click", async () => {
+            invoiceShareButton.disabled = true;
+            try {
+              await navigator.share({
+                files: [file],
+                title: invoiceShareButton.dataset.shareTitle,
+                text: invoiceShareButton.dataset.shareText,
+              });
+              shareStatus.textContent = invoiceShareButton.dataset.shared;
+            } catch (error) {
+              shareStatus.textContent = error.name === "AbortError"
+                ? invoiceShareButton.dataset.cancelled
+                : invoiceShareButton.dataset.failed;
+            } finally {
+              invoiceShareButton.disabled = false;
+            }
+          });
+        })
+        .catch(() => {
+          invoiceShareButton.hidden = true;
+          shareStatus.textContent = invoiceShareButton.dataset.failed;
+        });
+    }
+  }
   const form = document.getElementById("billing-form");
   if (!form) return;
   const cart = new Map();

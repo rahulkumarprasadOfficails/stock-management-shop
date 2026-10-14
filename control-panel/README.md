@@ -40,6 +40,8 @@ Set these environment variables on this Control Panel service:
 
 The build installs the Control Panel's Python dependencies, creates the panel-only schema, runs only the Control Panel's migrations, and collects static files. The Neon database role must have permission to create a schema and tables. If it cannot create the schema, grant permissions or use a role that can; do not point the panel's migrations into `public`.
 
+Shop detail pages support deactivation/reactivation and a separate permanent deletion action. Permanent deletion requires typing the exact shop name and removes the shop's business records and linked shopkeeper accounts from the shared database; the Control Panel retains an audit entry for the deletion.
+
 ### 4. Create the Control Panel superuser
 
 After the Control Panel service deploys successfully, create its superuser from your local PowerShell. This runs panel commands against the same Neon database, so do not accidentally point `DATABASE_URL` at a different project:
