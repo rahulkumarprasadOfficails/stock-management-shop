@@ -14,7 +14,14 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 if not SECRET_KEY and IS_RENDER:
     raise ImproperlyConfigured("Set SECRET_KEY in the environment.")
 SECRET_KEY = SECRET_KEY or "local-only-shopkeeper-control-panel-key"
-ALLOWED_HOSTS = [host.strip() for host in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if host.strip()]
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+    if host.strip()
+]
+render_hostname = os.environ.get("RENDER_EXTERNAL_HOSTNAME", "").strip()
+if render_hostname and render_hostname not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(render_hostname)
 INSTALLED_APPS = [
     "django.contrib.auth",
     "django.contrib.contenttypes",

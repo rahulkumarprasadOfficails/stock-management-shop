@@ -35,7 +35,7 @@ Set these environment variables on this Control Panel service:
 - `DATABASE_URL`: the same Neon PostgreSQL connection string used by ShopKeeper.
 - `SECRET_KEY`: a newly generated, unique value; do not reuse ShopKeeper's secret.
 - `DEBUG`: `False`.
-- `ALLOWED_HOSTS`: the exact Control Panel Render hostname.
+- `ALLOWED_HOSTS`: optional for the default Render hostname, which Django reads from Render's `RENDER_EXTERNAL_HOSTNAME`; add any custom domains here as a comma-separated list.
 - `ALLOWED_IPS` (optional): comma-separated client IPs, after confirming the proxy's remote-address behavior.
 
 The build installs the Control Panel's Python dependencies, creates the panel-only schema, runs only the Control Panel's migrations, and collects static files. The Neon database role must have permission to create a schema and tables. If it cannot create the schema, grant permissions or use a role that can; do not point the panel's migrations into `public`.
