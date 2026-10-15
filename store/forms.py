@@ -102,6 +102,66 @@ class ProductStockForm(forms.Form):
         return name
 
 
+class BulkStockRowForm(forms.Form):
+    product_name = forms.CharField(max_length=160)
+    unit = forms.ChoiceField(choices=Product.Unit.choices, required=False)
+    selling_price = forms.DecimalField(
+        max_digits=12, decimal_places=2, min_value=0.01, required=False,
+    )
+    purchase_price = forms.DecimalField(
+        max_digits=12, decimal_places=2, min_value=0, required=False,
+    )
+    quantity_received = forms.DecimalField(
+        max_digits=12, decimal_places=3, min_value=0.001,
+    )
+    expiry_date = forms.DateField(required=False, input_formats=["%Y-%m-%d"])
+    gst_percent = forms.ChoiceField(
+        choices=[(value, f"{value}%") for value in (0, 5, 12, 18, 28)],
+        required=False,
+    )
+    hsn_code = forms.CharField(max_length=20, required=False)
+    low_stock_limit = forms.DecimalField(
+        max_digits=12, decimal_places=3, min_value=0, required=False,
+    )
+    note = forms.CharField(max_length=255, required=False)
+
+    def __init__(self, *args, existing_products=None, **kwargs):
+        self.existing_products = existing_products or {}
+        super().__init__(*args, **kwargs)
+
+    def clean_product_name(self):
+        return self.cleaned_data["product_name"].strip()
+
+    def clean(self):
+        cleaned = super().clean()
+        name = cleaned.get("product_name")
+        if not name:
+            return cleaned
+        existing = self.existing_products.get(name.casefold())
+        cleaned["existing_product"] = existing
+        if existing is None:
+            if not cleaned.get("unit"):
+                self.add_error("unit", _("Unit is required for a new product."))
+            if cleaned.get("selling_price") is None:
+                self.add_error("selling_price", _("Selling price is required for a new product."))
+        else:
+            if not existing.is_active:
+                self.add_error(
+                    "product_name",
+                    _("This product already exists but is inactive. Reactivate it before adding stock."),
+                )
+            cleaned["unit"] = existing.unit
+            cleaned["selling_price"] = existing.selling_price
+            cleaned["gst_percent"] = str(existing.gst_percent)
+            cleaned["hsn_code"] = existing.hsn_code
+            cleaned["low_stock_limit"] = existing.low_stock_limit
+        cleaned["gst_percent"] = int(cleaned.get("gst_percent") or 0)
+        cleaned["hsn_code"] = cleaned.get("hsn_code") or ""
+        cleaned["low_stock_limit"] = cleaned.get("low_stock_limit") or 0
+        cleaned["note"] = cleaned.get("note") or ""
+        return cleaned
+
+
 class CustomerForm(StyledForm):
     class Meta:
         model = Customer

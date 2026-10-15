@@ -1,0 +1,93 @@
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% trans "Bulk stock entry · ShopSetu" %}{% endblock %}
+{% block content %}
+<div class="bulk-stock-page mx-auto max-w-5xl space-y-5">
+  <header>
+    <a class="panel-link" href="{% url 'stock' %}">← {% trans "Back to inventory" %}</a>
+    <h1 class="page-title mt-2">{% trans "Bulk stock entry" %}</h1>
+    <p class="mt-1 text-slate-600">{% trans "Upload an Excel or CSV sheet to add products and stock batches together." %}</p>
+  </header>
+
+  <section class="panel space-y-3">
+    <div>
+      <h2 class="section-title">{% trans "Prepare your spreadsheet" %}</h2>
+      <p class="mt-1 text-sm text-slate-600">{% trans "Download the template first. For a new product, provide its unit and selling price. For an existing product, match its name and only a new stock batch will be added; existing product details will not be changed." %}</p>
+    </div>
+    <a class="small-button w-full sm:w-auto" href="{% url 'stock_bulk_template' %}">{% trans "Download Excel template" %}</a>
+    <div class="overflow-x-auto rounded-lg border border-slate-200">
+      <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+        <thead class="bg-slate-50"><tr><th class="px-3 py-2 font-semibold">{% trans "Column" %}</th><th class="px-3 py-2 font-semibold">{% trans "Required" %}</th><th class="px-3 py-2 font-semibold">{% trans "Used for" %}</th></tr></thead>
+        <tbody class="divide-y divide-slate-100">
+          <tr><td class="px-3 py-2 font-medium">product_name</td><td class="px-3 py-2">{% trans "Yes" %}</td><td class="px-3 py-2">{% trans "Existing product match or new product name" %}</td></tr>
+          <tr><td class="px-3 py-2 font-medium">quantity_received</td><td class="px-3 py-2">{% trans "Yes" %}</td><td class="px-3 py-2">{% trans "Quantity in this stock batch" %}</td></tr>
+          <tr><td class="px-3 py-2 font-medium">unit, selling_price</td><td class="px-3 py-2">{% trans "For new products" %}</td><td class="px-3 py-2">{% trans "Product details" %}</td></tr>
+          <tr><td class="px-3 py-2 font-medium">purchase_price, expiry_date, note</td><td class="px-3 py-2">{% trans "No" %}</td><td class="px-3 py-2">{% trans "Stock batch details; expiry format YYYY-MM-DD" %}</td></tr>
+          <tr><td class="px-3 py-2 font-medium">gst_percent, hsn_code, low_stock_limit</td><td class="px-3 py-2">{% trans "No" %}</td><td class="px-3 py-2">{% trans "New product details" %}</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="text-sm text-slate-500">{% trans "Up to 5,000 product rows per upload; .xlsx and UTF-8 .csv files up to 5 MB. Imports are all-or-nothing: correct any preview errors and upload the corrected file." %}</p>
+  </section>
+
+  {% if upload_error %}
+  <div class="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800" role="alert">{{ upload_error }}</div>
+  {% endif %}
+
+  {% if not preview_rows %}
+  <section class="panel">
+    <h2 class="section-title mb-3">{% trans "Upload spreadsheet" %}</h2>
+    <form method="post" enctype="multipart/form-data" class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="preview">
+      <div>
+        <label class="mb-1 block text-sm font-medium" for="stock-spreadsheet">{% trans "Excel or CSV file" %}</label>
+        <input id="stock-spreadsheet" class="form-input" type="file" name="spreadsheet" accept=".xlsx,.csv" required>
+      </div>
+      <button class="primary-button w-full sm:w-auto">{% trans "Preview import" %}</button>
+    </form>
+  </section>
+  {% endif %}
+
+  {% if preview_rows %}
+  <section class="panel">
+    <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
+      <div>
+        <h2 class="section-title">{% trans "Import preview" %}</h2>
+        <p class="mt-1 text-sm text-slate-600">{% blocktrans with count=preview_rows|length %}{{ count }} product rows found{% endblocktrans %}</p>
+      </div>
+      {% if preview_error_count %}
+      <span class="status-pill status-danger">{% blocktrans with count=preview_error_count %}{{ count }} row(s) need correction{% endblocktrans %}</span>
+      {% else %}
+      <span class="status-pill status-success">{% trans "All rows are valid" %}</span>
+      {% endif %}
+    </div>
+    <div class="bulk-preview-table overflow-auto rounded-lg">
+      <table class="dashboard-table min-w-full">
+        <thead><tr><th>{% trans "Spreadsheet row" %}</th><th>{% trans "Product" %}</th><th>{% trans "Action" %}</th><th>{% trans "Quantity" %}</th><th>{% trans "Result" %}</th></tr></thead>
+        <tbody>
+          {% for row in preview_rows %}
+          <tr>
+            <td>{{ row.row_number }}</td><td>{{ row.product_name|default:"—" }}</td>
+            <td>{% if row.errors %}—{% elif row.product_id %}{% trans "Add stock batch" %}{% else %}{% trans "Create product and batch" %}{% endif %}</td>
+            <td>{{ row.quantity_received|default:"—" }}</td>
+            <td>{% if row.errors %}<ul class="list-disc pl-4 text-red-700">{% for error in row.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% else %}<span class="status-pill status-success">{% trans "Ready" %}</span>{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="bulk-preview-actions mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+      <a class="small-button" href="{% url 'stock_bulk_import' %}">{% trans "Upload corrected file" %}</a>
+      {% if can_confirm %}
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="confirm">
+        <input type="hidden" name="preview_token" value="{{ preview_token }}">
+        <button class="primary-button w-full sm:w-auto">{% trans "Confirm and import all rows" %}</button>
+      </form>
+      {% endif %}
+    </div>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,4 +1,31 @@
 (() => {
+  const themeToggle = document.querySelector("[data-theme-toggle]");
+  if (themeToggle) {
+    const label = themeToggle.querySelector(".theme-toggle-label");
+    const darkLabel = themeToggle.dataset.darkLabel;
+    const lightLabel = themeToggle.dataset.lightLabel;
+    const updateThemeToggle = () => {
+      const isDark = document.documentElement.dataset.theme === "dark";
+      const nextLabel = isDark ? lightLabel : darkLabel;
+      themeToggle.setAttribute("aria-label", `Switch to ${nextLabel.toLowerCase()}`);
+      themeToggle.setAttribute("aria-pressed", String(isDark));
+      themeToggle.querySelector(".theme-toggle-icon").textContent = isDark ? "☀" : "☾";
+      label.textContent = nextLabel;
+      document.querySelector('meta[name="theme-color"]').content = isDark ? "#0b1220" : "#f5f7fb";
+    };
+    updateThemeToggle();
+    themeToggle.addEventListener("click", () => {
+      const isDark = document.documentElement.dataset.theme !== "dark";
+      if (isDark) document.documentElement.dataset.theme = "dark";
+      else delete document.documentElement.dataset.theme;
+      try {
+        localStorage.setItem("shopsetu-theme", isDark ? "dark" : "light");
+      } catch (error) {
+        console.warn("ShopSetu could not save the theme preference.", error);
+      }
+      updateThemeToggle();
+    });
+  }
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js"));
   }
@@ -65,6 +92,30 @@
   const cartCount = document.getElementById("cart-count");
   const totalCopy = document.getElementById("estimated-total-copy");
 
+  function syncProductQuantityControls() {
+    document.querySelectorAll("[data-product-quantity-controls]").forEach(controls => {
+      const card = controls.closest("[data-product-card]");
+      const item = card && cart.get(card.dataset.id);
+      controls.hidden = !item;
+      if (!item) return;
+      const input = controls.querySelector("[data-product-quantity]");
+      input.value = item.quantity;
+      controls.querySelector('[data-quantity-step="1"]').disabled =
+        Number(item.quantity) >= Number(item.stock);
+    });
+  }
+
+  function setProductQuantity(id, quantity) {
+    const item = cart.get(id);
+    if (!item) return;
+    if (quantity <= 0) {
+      cart.delete(id);
+    } else {
+      item.quantity = String(Math.min(quantity, Number(item.stock)));
+    }
+    render();
+  }
+
   function render() {
     cartCount.textContent = Array.from(cart.values()).reduce((count, item) => count + Number(item.quantity), 0);
     if (cart.size === 0) {
@@ -75,6 +126,7 @@
       hidden.value = "[]";
       document.getElementById("estimated-total").textContent = "0.00";
       totalCopy.textContent = "0.00";
+      syncProductQuantityControls();
       return;
     }
     const empty = document.getElementById("empty-cart");
@@ -99,8 +151,9 @@
       input.className = "w-24 rounded-lg border px-2 py-2";
       input.setAttribute("aria-label", `Quantity for ${item.name}`);
       input.addEventListener("change", () => {
-        if (Number(input.value) <= 0) cart.delete(id);
-        else item.quantity = String(Math.min(Number(input.value), Number(item.stock)));
+        const requestedQuantity = Number(input.value);
+        if (!Number.isFinite(requestedQuantity) || requestedQuantity <= 0) cart.delete(id);
+        else item.quantity = String(Math.min(requestedQuantity, Number(item.stock)));
         render();
       });
       const remove = document.createElement("button");
@@ -117,6 +170,7 @@
     hidden.value = JSON.stringify(Array.from(cart, ([product_id, item]) => ({ product_id, quantity: item.quantity })));
     document.getElementById("estimated-total").textContent = total.toFixed(2);
     totalCopy.textContent = total.toFixed(2);
+    syncProductQuantityControls();
   }
 
   document.body.addEventListener("htmx:responseError", event => {
@@ -128,16 +182,22 @@
 
   document.body.addEventListener("click", event => {
     const target = event.target instanceof Element ? event.target : event.target.parentElement;
+    const stepButton = target && target.closest("[data-quantity-step]");
+    if (stepButton) {
+      const card = stepButton.closest("[data-product-card]");
+      const item = card && cart.get(card.dataset.id);
+      if (!item) return;
+      const nextQuantity = Number(item.quantity) + Number(stepButton.dataset.quantityStep);
+      setProductQuantity(card.dataset.id, nextQuantity <= 0 ? 0 : nextQuantity);
+      return;
+    }
+
     const button = target && target.closest("[data-add-product]");
     if (!button) return;
     const id = button.dataset.id;
     const existing = cart.get(id);
     const nextQuantity = (existing ? Number(existing.quantity) : 0) + 1;
-    if (nextQuantity > Number(button.dataset.stock)) {
-      button.classList.add("add-product-limit");
-      window.setTimeout(() => button.classList.remove("add-product-limit"), 500);
-      return;
-    }
+    if (nextQuantity > Number(button.dataset.stock)) return;
     cart.set(id, {
       name: button.dataset.name,
       unit: button.dataset.unit,
@@ -147,6 +207,21 @@
       quantity: String(nextQuantity),
     });
     render();
+  });
+  document.body.addEventListener("change", event => {
+    const input = event.target instanceof HTMLInputElement
+      ? event.target.closest("[data-product-quantity]")
+      : null;
+    if (!input) return;
+    const card = input.closest("[data-product-card]");
+    const item = card && cart.get(card.dataset.id);
+    if (!item) return;
+    const requestedQuantity = Number(input.value);
+    if (!Number.isFinite(requestedQuantity) || requestedQuantity <= 0) {
+      setProductQuantity(card.dataset.id, 0);
+      return;
+    }
+    setProductQuantity(card.dataset.id, requestedQuantity);
   });
   form.addEventListener("submit", event => {
     if (cart.size === 0) {

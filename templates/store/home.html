@@ -12,6 +12,21 @@
     <strong>₹{{ sales_today|floatformat:2 }}</strong>
     <small>{% trans "Total from completed bills today" %}</small>
   </article>
+  <article class="metric-card metric-profit-today">
+    <div class="metric-topline"><span>{% trans "Today's profit" %}</span><span class="metric-icon metric-icon-violet" aria-hidden="true">↗</span></div>
+    <strong>₹{{ profit_today|floatformat:2 }}</strong>
+    <small>{% trans "Before GST/expenses; bills without batch cost are excluded" %}</small>
+  </article>
+  <article class="metric-card metric-month-sales">
+    <div class="metric-topline"><span>{% trans "Monthly sales" %}</span><span class="metric-icon" aria-hidden="true">₹</span></div>
+    <strong>₹{{ sales_month|floatformat:2 }}</strong>
+    <small>{% trans "Total from completed bills this month" %}</small>
+  </article>
+  <article class="metric-card metric-month-profit">
+    <div class="metric-topline"><span>{% trans "Monthly profit" %}</span><span class="metric-icon metric-icon-violet" aria-hidden="true">↗</span></div>
+    <strong>₹{{ profit_month|floatformat:2 }}</strong>
+    <small>{% trans "Before GST/expenses; bills without batch cost are excluded" %}</small>
+  </article>
   <a href="{% url 'stock' %}" class="metric-card">
     <div class="metric-topline"><span>{% trans "Low stock items" %}</span><span class="metric-icon metric-icon-amber" aria-hidden="true">!</span></div>
     <strong>{{ low_stock|length }}</strong>

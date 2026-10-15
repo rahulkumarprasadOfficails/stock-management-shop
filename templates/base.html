@@ -5,12 +5,22 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f5f7fb">
+  <script>
+    try {
+      if (localStorage.getItem("shopsetu-theme") === "dark") {
+        document.documentElement.dataset.theme = "dark";
+        document.querySelector('meta[name="theme-color"]').content = "#0b1220";
+      }
+    } catch (error) {
+      console.warn("ShopSetu could not read the saved theme preference.", error);
+    }
+  </script>
   <link rel="manifest" href="{% url 'manifest' %}">
   <link rel="icon" href="{% static 'store/icon.svg' %}" type="image/svg+xml">
   <title>{% block title %}{% trans "ShopSetu" %}{% endblock %}</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/htmx.org@2.0.4"></script>
-  <link rel="stylesheet" href="{% static 'store/app.css' %}?v=2">
+  <link rel="stylesheet" href="{% static 'store/app.css' %}?v=6">
   {% block head %}{% endblock %}
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-900">
@@ -24,7 +34,7 @@
     <div class="sidebar-caption">{% trans "WORKSPACE" %}</div>
     <nav class="sidebar-nav" aria-label="{% trans 'Main navigation' %}">
       <a class="sidebar-link {% if request.resolver_match.url_name == 'home' %}is-active{% endif %}" href="{% url 'home' %}"><span class="nav-symbol">⌂</span>{% trans "Dashboard" %}</a>
-      <a class="sidebar-link {% if request.resolver_match.url_name == 'stock' or request.resolver_match.url_name == 'stock_add' or request.resolver_match.url_name == 'stock_correct' %}is-active{% endif %}" href="{% url 'stock' %}"><span class="nav-symbol">▤</span>{% trans "Inventory" %}</a>
+      <a class="sidebar-link {% if request.resolver_match.url_name == 'stock' or request.resolver_match.url_name == 'stock_add' or request.resolver_match.url_name == 'stock_correct' or request.resolver_match.url_name == 'stock_bulk_import' %}is-active{% endif %}" href="{% url 'stock' %}"><span class="nav-symbol">▤</span>{% trans "Inventory" %}</a>
       <a class="sidebar-link {% if request.resolver_match.url_name == 'billing' %}is-active{% endif %}" href="{% url 'billing' %}"><span class="nav-symbol">▣</span>{% trans "Sales & Billing" %}</a>
       <a class="sidebar-link {% if request.resolver_match.url_name == 'customers' or request.resolver_match.url_name == 'customer_detail' or request.resolver_match.url_name == 'customer_create' or request.resolver_match.url_name == 'customer_edit' %}is-active{% endif %}" href="{% url 'customers' %}"><span class="nav-symbol">♙</span>{% trans "Customers" %}</a>
       <a class="sidebar-link {% if request.resolver_match.url_name == 'credit_list' or request.resolver_match.url_name == 'credit_add' %}is-active{% endif %}" href="{% url 'credit_list' %}"><span class="nav-symbol">₹</span>{% trans "Credit ledger" %}</a>
@@ -49,6 +59,11 @@
       <div class="topbar-title"><span class="topbar-eyebrow">{% trans "SHOP WORKSPACE" %}</span><strong>{{ user.profile.shop.name }}</strong></div>
       <div class="topbar-actions">
         <span class="topbar-user">{{ user.get_full_name|default:user.username }}</span>
+        <button type="button" class="theme-toggle" data-theme-toggle
+                data-dark-label="{% trans 'Dark mode' %}" data-light-label="{% trans 'Light mode' %}"
+                aria-label="{% trans 'Switch to dark mode' %}" aria-pressed="false">
+          <span class="theme-toggle-icon" aria-hidden="true">☾</span><span class="theme-toggle-label">{% trans "Dark mode" %}</span>
+        </button>
         <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="logout-button">{% trans "Log out" %}</button></form>
       </div>
     </header>
@@ -76,7 +91,7 @@
   </div>
   <nav class="mobile-dock" aria-label="{% trans 'Quick navigation' %}">
     <a class="{% if request.resolver_match.url_name == 'home' %}is-active{% endif %}" href="{% url 'home' %}"><span>⌂</span>{% trans "Home" %}</a>
-    <a class="{% if request.resolver_match.url_name == 'stock' or request.resolver_match.url_name == 'stock_add' or request.resolver_match.url_name == 'stock_correct' %}is-active{% endif %}" href="{% url 'stock' %}"><span>▤</span>{% trans "Stock" %}</a>
+    <a class="{% if request.resolver_match.url_name == 'stock' or request.resolver_match.url_name == 'stock_add' or request.resolver_match.url_name == 'stock_correct' or request.resolver_match.url_name == 'stock_bulk_import' %}is-active{% endif %}" href="{% url 'stock' %}"><span>▤</span>{% trans "Stock" %}</a>
     <a class="{% if request.resolver_match.url_name == 'billing' %}is-active{% endif %}" href="{% url 'billing' %}"><span>▣</span>{% trans "Billing" %}</a>
     <a class="{% if request.resolver_match.url_name == 'customers' or request.resolver_match.url_name == 'customer_detail' %}is-active{% endif %}" href="{% url 'customers' %}"><span>♙</span>{% trans "Customers" %}</a>
     <details class="mobile-more">
@@ -96,6 +111,6 @@
   </nav>
 </div>
 {% endif %}
-<script src="{% static 'store/app.js' %}"></script>
+<script src="{% static 'store/app.js' %}?v=3"></script>
 </body>
 </html>

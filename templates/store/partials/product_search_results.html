@@ -1,6 +1,6 @@
 {% load i18n %}
 {% for product in products %}
-<article class="search-product">
+<article class="search-product" data-product-card data-id="{{ product.pk }}">
   <div class="min-w-0">
     <h2 class="truncate font-semibold text-slate-800">{{ product.name }}</h2>
     <p class="mt-1 text-sm text-slate-600">₹{{ product.selling_price|floatformat:2 }} / {{ product.unit }}</p>
@@ -16,6 +16,16 @@
       <span class="text-xs font-medium text-rose-600">{% trans "Out of stock" %}</span>
     {% endif %}
   </div>
+  {% if product.sellable_stock > 0 %}
+  <div class="product-quantity-controls" data-product-quantity-controls hidden>
+    <button type="button" class="quantity-step-button" data-quantity-step="-1"
+            aria-label="{% blocktrans with name=product.name %}Decrease {{ name }} quantity{% endblocktrans %}">−</button>
+    <input type="number" min="0.001" step="0.001" max="{{ product.sellable_stock }}"
+           data-product-quantity aria-label="{% blocktrans with name=product.name %}Quantity of {{ name }}{% endblocktrans %}">
+    <button type="button" class="quantity-step-button" data-quantity-step="1"
+            aria-label="{% blocktrans with name=product.name %}Increase {{ name }} quantity{% endblocktrans %}">+</button>
+  </div>
+  {% endif %}
 </article>
 {% empty %}
   {% if search_started %}

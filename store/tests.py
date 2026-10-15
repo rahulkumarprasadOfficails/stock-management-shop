@@ -1,14 +1,17 @@
 from datetime import timedelta
 from decimal import Decimal
+from io import BytesIO
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.management import call_command
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import connection
 from django.test import RequestFactory, TestCase
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
+from openpyxl import load_workbook
 
 from .context_processors import announcements as announcements_context
 from .models import (
@@ -224,7 +227,8 @@ class TenantIsolationTests(ShopTestCase):
         urls = [
             reverse("home"), reverse("setup"),
             reverse("product_edit", args=[self.product.pk]),
-            reverse("stock"), reverse("stock_add"), reverse("stock_correct", args=[self.batch.pk]),
+            reverse("stock"), reverse("stock_add"), reverse("stock_bulk_import"),
+            reverse("stock_bulk_template"), reverse("stock_correct", args=[self.batch.pk]),
             reverse("billing"), reverse("customers"), reverse("customer_create"),
             reverse("customer_edit", args=[self.customer.pk]), reverse("customer_detail", args=[self.customer.pk]),
             reverse("credit_list"), reverse("credit_add", args=[self.customer.pk]),
@@ -546,6 +550,7 @@ class BillingServiceTests(ShopTestCase):
         self.assertContains(developer_response, "tel:+916203027876")
         self.assertContains(developer_response, "tel:+919508083649")
         self.assertContains(developer_response, "tel:+917061058012")
+        self.assertContains(developer_response, "near City Hospital, Ranchi, Jharkhand 834005")
 
     def test_invoice_pdf_download_works_for_shop_and_public_share_link(self):
         invoice = create_invoice(
@@ -589,6 +594,156 @@ class BillingServiceTests(ShopTestCase):
         self.assertContains(response, "Add Tea to bill")
 
 class InventoryQueryTests(ShopTestCase):
+    def test_bulk_stock_import_previews_then_adds_batches_and_new_products(self):
+        self.client.force_login(self.user)
+        csv_content = (
+            "product_name,unit,selling_price,purchase_price,quantity_received,expiry_date,gst_percent,hsn_code,low_stock_limit,note\n"
+            "Tea,,,,5,,0,,,Restock\n"
+            "Coffee,packet,25.00,18.00,12,2027-12-31,5,0901,3,Opening stock\n"
+        )
+        upload = SimpleUploadedFile("stock.csv", csv_content.encode("utf-8"), content_type="text/csv")
+
+        preview_response = self.client.post(
+            reverse("stock_bulk_import"),
+            {"action": "preview", "spreadsheet": upload},
+        )
+
+        self.assertEqual(preview_response.status_code, 200)
+        self.assertContains(preview_response, "Confirm and import all rows")
+        self.assertContains(preview_response, "bulk-stock-page")
+        self.assertContains(preview_response, "bulk-preview-table")
+        self.assertEqual(Product.objects.filter(shop=self.shop).count(), 1)
+        self.assertEqual(StockBatch.objects.filter(shop=self.shop).count(), 1)
+        token = preview_response.context["preview_token"]
+        confirm_response = self.client.post(
+            reverse("stock_bulk_import"),
+            {"action": "confirm", "preview_token": token},
+        )
+
+        self.assertRedirects(confirm_response, reverse("stock"))
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.selling_price, Decimal("10.00"))
+        tea_batch = StockBatch.objects.get(shop=self.shop, product=self.product, note="Restock")
+        self.assertEqual(tea_batch.quantity_remaining, Decimal("5"))
+        coffee = Product.objects.get(shop=self.shop, name="Coffee")
+        coffee_batch = StockBatch.objects.get(shop=self.shop, product=coffee)
+        self.assertEqual(coffee.unit, Product.Unit.PACKET)
+        self.assertEqual(coffee_batch.quantity_remaining, Decimal("12"))
+        self.assertEqual(coffee_batch.expiry_date.isoformat(), "2027-12-31")
+        self.assertEqual(coffee_batch.purchase_price, Decimal("18.00"))
+
+    def test_bulk_stock_import_blocks_invalid_rows_without_partial_import(self):
+        self.client.force_login(self.user)
+        csv_content = (
+            "product_name,unit,selling_price,quantity_received\n"
+            "Coffee,packet,,4\n"
+            "Tea,,,2\n"
+        )
+        upload = SimpleUploadedFile("invalid.csv", csv_content.encode("utf-8"), content_type="text/csv")
+
+        response = self.client.post(
+            reverse("stock_bulk_import"),
+            {"action": "preview", "spreadsheet": upload},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Selling price is required for a new product.")
+        self.assertNotContains(response, "Confirm and import all rows")
+        self.assertNotIn("preview_token", response.context)
+        self.assertEqual(Product.objects.filter(shop=self.shop).count(), 1)
+        self.assertEqual(StockBatch.objects.filter(shop=self.shop).count(), 1)
+
+    def test_bulk_stock_import_preview_cannot_be_confirmed_for_another_shop(self):
+        self.client.force_login(self.user)
+        csv_content = (
+            "product_name,unit,selling_price,quantity_received\n"
+            "Coffee,packet,25.00,4\n"
+        )
+        upload = SimpleUploadedFile("stock.csv", csv_content.encode("utf-8"), content_type="text/csv")
+        preview = self.client.post(
+            reverse("stock_bulk_import"),
+            {"action": "preview", "spreadsheet": upload},
+        )
+        other_owner = User.objects.create_user("other-owner")
+        UserProfile.objects.create(
+            user=other_owner, shop=self.other_shop, role=UserProfile.Role.OWNER,
+            must_change_password=False,
+        )
+        self.client.force_login(other_owner)
+
+        response = self.client.post(
+            reverse("stock_bulk_import"),
+            {"action": "confirm", "preview_token": preview.context["preview_token"]},
+        )
+
+        self.assertRedirects(response, reverse("stock_bulk_import"))
+        self.assertFalse(Product.objects.filter(shop=self.shop, name="Coffee").exists())
+        self.assertFalse(Product.objects.filter(shop=self.other_shop, name="Coffee").exists())
+
+    def test_staff_cannot_open_bulk_stock_entry(self):
+        staff = User.objects.create_user("bulk-staff")
+        UserProfile.objects.create(
+            user=staff, shop=self.shop, role=UserProfile.Role.STAFF,
+            must_change_password=False,
+        )
+        self.client.force_login(staff)
+
+        response = self.client.get(reverse("stock_bulk_import"))
+
+        self.assertEqual(response.status_code, 403)
+
+    def test_bulk_stock_import_reads_excel_workbooks(self):
+        self.client.force_login(self.user)
+        workbook = load_workbook(BytesIO(self.client.get(reverse("stock_bulk_template")).content))
+        sheet = workbook["Stock import"]
+        sheet.append(["Tea", "", "", "4.25", "3", "2027-12-31", "", "", "", "Excel restock"])
+        output = BytesIO()
+        workbook.save(output)
+        workbook.close()
+        upload = SimpleUploadedFile(
+            "restock.xlsx", output.getvalue(),
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
+        response = self.client.post(
+            reverse("stock_bulk_import"),
+            {"action": "preview", "spreadsheet": upload},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Confirm and import all rows")
+        confirm_response = self.client.post(
+            reverse("stock_bulk_import"),
+            {"action": "confirm", "preview_token": response.context["preview_token"]},
+        )
+        self.assertRedirects(confirm_response, reverse("stock"))
+        batch = StockBatch.objects.get(shop=self.shop, product=self.product, note="Excel restock")
+        self.assertEqual(batch.quantity_remaining, Decimal("3"))
+        self.assertEqual(batch.purchase_price, Decimal("4.25"))
+        self.assertEqual(batch.expiry_date.isoformat(), "2027-12-31")
+
+    def test_bulk_stock_template_is_an_excel_workbook_with_documented_headers(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("stock_bulk_template"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response["Content-Type"],
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        workbook = load_workbook(BytesIO(response.content), read_only=True)
+        self.assertEqual(
+            tuple(cell.value for cell in workbook["Stock import"][1]),
+            (
+                "product_name", "unit", "selling_price", "purchase_price",
+                "quantity_received", "expiry_date", "gst_percent", "hsn_code",
+                "low_stock_limit", "note",
+            ),
+        )
+        self.assertIn("Instructions", workbook.sheetnames)
+        workbook.close()
+
     def test_dashboard_marks_low_stock_and_counts_expiry_windows(self):
         today = timezone.localdate()
         self.batch.quantity_remaining = Decimal("1")
@@ -603,11 +758,92 @@ class InventoryQueryTests(ShopTestCase):
         self.assertContains(response, "dashboard-metrics")
         self.assertContains(response, "mobile-dock")
         self.assertContains(response, "Developed &amp; engineered by Rahul Kumar Prasad")
+        self.assertContains(response, "data-theme-toggle")
+        self.assertContains(response, "metric-profit-today")
         self.assertContains(response, "Low stock")
         self.assertEqual(len(response.context["low_stock"]), 1)
         self.assertEqual(response.context["expiry_counts"][7], 1)
         self.assertEqual(response.context["expiry_counts"][15], 1)
         self.assertEqual(response.context["expiry_counts"][30], 1)
+
+    def test_dashboard_profit_uses_known_batch_costs_and_excludes_uncosted_or_cancelled_bills(self):
+        self.batch.purchase_price = Decimal("4.00")
+        self.batch.save(update_fields=["purchase_price"])
+        create_invoice(
+            user=self.user, shop=self.shop, customer=None,
+            payment_type=Invoice.PaymentType.CASH, amount_paid=0,
+            items_json='[{"product_id": %s, "quantity": "2"}]' % self.product.pk,
+        )
+        uncosted_product = Product.objects.create(
+            shop=self.shop, name="Unknown cost item", selling_price=Decimal("10.00"),
+        )
+        StockBatch.objects.create(
+            shop=self.shop, product=uncosted_product, quantity_received=Decimal("5"),
+            quantity_remaining=Decimal("5"),
+        )
+        create_invoice(
+            user=self.user, shop=self.shop, customer=None,
+            payment_type=Invoice.PaymentType.CASH, amount_paid=0,
+            items_json='[{"product_id": %s, "quantity": "1"}]' % uncosted_product.pk,
+        )
+        cancelled_invoice = create_invoice(
+            user=self.user, shop=self.shop, customer=None,
+            payment_type=Invoice.PaymentType.CASH, amount_paid=0,
+            items_json='[{"product_id": %s, "quantity": "1"}]' % self.product.pk,
+        )
+        cancel_invoice(invoice=cancelled_invoice, user=self.user, shop=self.shop)
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("home"))
+
+        self.assertEqual(response.context["profit_today"], Decimal("12.00"))
+        self.assertEqual(response.context["sales_month"], Decimal("30.00"))
+        self.assertEqual(response.context["profit_month"], Decimal("12.00"))
+        self.assertContains(response, "bills without batch cost are excluded")
+        self.assertContains(response, "Monthly sales")
+        self.assertContains(response, "Monthly profit")
+
+    def test_billing_recommends_all_time_best_sellers_from_active_bills(self):
+        coffee = Product.objects.create(
+            shop=self.shop, name="Coffee", selling_price=Decimal("20.00"),
+        )
+        StockBatch.objects.create(
+            shop=self.shop, product=coffee, quantity_received=Decimal("10"),
+            quantity_remaining=Decimal("10"),
+        )
+        tea_invoice = create_invoice(
+            user=self.user, shop=self.shop, customer=None,
+            payment_type=Invoice.PaymentType.CASH, amount_paid=0,
+            items_json='[{"product_id": %s, "quantity": "3"}]' % self.product.pk,
+        )
+        create_invoice(
+            user=self.user, shop=self.shop, customer=None,
+            payment_type=Invoice.PaymentType.CASH, amount_paid=0,
+            items_json='[{"product_id": %s, "quantity": "2"}]' % self.product.pk,
+        )
+        create_invoice(
+            user=self.user, shop=self.shop, customer=None,
+            payment_type=Invoice.PaymentType.CASH, amount_paid=0,
+            items_json='[{"product_id": %s, "quantity": "4"}]' % coffee.pk,
+        )
+        cancel_invoice(invoice=tea_invoice, user=self.user, shop=self.shop)
+        self.client.force_login(self.user)
+
+        response = self.client.get(reverse("billing"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            [product.name for product in response.context["best_sellers"]],
+            ["Coffee", "Tea"],
+        )
+        self.assertContains(response, "Most-selling products")
+        self.assertContains(response, "Add Coffee to bill")
+        self.assertContains(response, "data-product-quantity-controls")
+        self.assertContains(response, 'data-quantity-step="-1"')
+        self.assertContains(response, "bill-estimated-total")
+        rendered = response.content.decode()
+        self.assertLess(rendered.index('id="product-search"'), rendered.index("Bill summary"))
+        self.assertLess(rendered.index("Bill summary"), rendered.index("Most-selling products"))
 
     def test_expired_batches_are_not_counted_as_upcoming(self):
         today = timezone.localdate()
